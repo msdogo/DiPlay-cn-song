@@ -2055,7 +2055,7 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
             toggle(card, getString(R.string.settings_call_at_call_rate), getString(R.string.settings_call_at_call_rate_description),
                 AirPlayPersistence.loadCallAtCallRate(this)) {
                 AirPlayPersistence.saveCallAtCallRate(this, it)
-                reconnectIfRunning()
+                markReconnectNeeded()
             }
             toggle(card, getString(R.string.settings_car_bluetooth_audio), getString(R.string.settings_car_bluetooth_audio_description),
                 AirPlayPersistence.loadCarBluetoothAudio(this)) {
