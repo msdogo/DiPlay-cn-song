@@ -941,6 +941,10 @@
     <string name="connection_help_choose_iphone">车机已与多台设备配对。请返回 DiPlay，点击“选择 iPhone”并选择你的 iPhone，然后重试。</string>
     <string name="wifi_direct_channel_unavailable">Wi-Fi Direct 无法使用首选信道</string>
     <string name="connection_help_wifi_direct_channel">请在“连接设置”中将“首选 Wi-Fi Direct 信道”设为“自动”，然后重试。</string>
+    <string name="car_sees_no_usb_device">车机尚未检测到任何 USB 设备</string>
+    <string name="car_sees_usb_device_not_iphone">车机检测到 USB 设备，但不是 iPhone</string>
+    <string name="connection_help_no_usb_device">请使用 USB 数据线（有些线只能充电），插入车机的 USB 数据接口或 CarPlay 接口，并解锁 iPhone。</string>
+    <string name="connection_help_usb_device_not_iphone">请用 USB 数据线连接车机的 USB 数据接口或 CarPlay 接口，拔掉其他 USB 设备，并解锁 iPhone。</string>
     <string name="connection_help_hotspot">请确认车机热点已开启，且名称和密码与 DiPlay 设置一致。若支持，使用 5 GHz 后重试。</string>
     <string name="connection_help_iphone_wifi">保持 Wi-Fi 和蓝牙开启。在 iPhone 上连接车机热点并启用自动加入，然后重试。若仍失败，请保存诊断报告。</string>
     <string name="connection_help_permissions">请在车机上允许 DiPlay 所需的 USB、附近设备或位置信息权限，然后重试。</string>
