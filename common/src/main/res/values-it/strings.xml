@@ -1024,6 +1024,7 @@
     <string name="hotspot_interface_not_found">L’interfaccia dell’hotspot salvata in DiPlay non esiste su quest’auto</string>
     <string name="connection_help_hotspot_interface_not_found">In Configurazione connessione tocca Modifica hotspot salvato, svuota Interfaccia dell’hotspot (facoltativa), poi riprova.</string>
     <string name="connection_help_car_hotspot_off">Accendi l’hotspot dell’auto nelle impostazioni dell’auto, poi riprova.</string>
+    <string name="last_connection_attempt">Ultimo tentativo di connessione (%1$s): %2$s</string>
     <string name="cluster_projection_shape">Forma della mappa sul quadro strumenti</string>
     <string name="cluster_projection_shape_half">Mezza schermata</string>
     <string name="cluster_projection_shape_full">Schermo intero</string>

@@ -5306,6 +5306,7 @@ class CarPlayHostActivity : ComponentActivity() {
                         installIphoneCornerMask(session, pending.second.first, pending.second.second)
                     } else clearIphoneCornerMask()
                     CarPlayBackgroundSession.active = true
+                    LastConnectionProblem.clear(this@CarPlayHostActivity)
                     showConnectionHelp(null)
                     callPopupSessionReady = true
                     updateCallPopupGuard()
@@ -5430,6 +5431,7 @@ class CarPlayHostActivity : ComponentActivity() {
         if (!startupRetryStopped || status !is CarPlayStatus.Failed) {
             if (knownCause != null) setConnectionStage(ConnectionFailureGuidance.stage(knownCause))
             else setConnectionStage(description, englishDescription)
+            LastConnectionProblem.follow(this, status)
         }
         connectionInstructionsView?.text = connectionInstructions(status)
         // Keep the actionable tip readable while automatic retries are in progress.

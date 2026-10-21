@@ -939,6 +939,7 @@
     <string name="hotspot_interface_not_found">واجهة نقطة الاتصال المحفوظة في DiPlay غير موجودة في هذه السيارة</string>
     <string name="connection_help_hotspot_interface_not_found">في «إعداد الاتصال»، اضغط «تعديل نقطة الاتصال المحفوظة» وامسح «واجهة نقطة الاتصال (اختياري)»، ثم أعد المحاولة.</string>
     <string name="connection_help_car_hotspot_off">شغّل نقطة اتصال السيارة في إعدادات السيارة، ثم أعد المحاولة.</string>
+    <string name="last_connection_attempt">آخر محاولة اتصال (%1$s): %2$s</string>
     <string name="connection_help_hotspot">تأكد من تشغيل نقطة اتصال السيارة وأن اسمها وكلمة مرورها يطابقان إعدادات DiPlay. استخدم تردد 5 غيغاهرتز إن توفر ثم أعد المحاولة.</string>
     <string name="connection_help_iphone_wifi">أبقِ Wi-Fi وبلوتوث قيد التشغيل. اتصل بنقطة اتصال السيارة من iPhone وفعّل الانضمام التلقائي ثم حاول مجددًا. احفظ تقرير تشخيص إذا استمر الفشل.</string>
     <string name="connection_help_permissions">اسمح لـ DiPlay بأذونات USB أو الأجهزة القريبة أو الموقع المطلوبة على وحدة السيارة، ثم أعد المحاولة.</string>
