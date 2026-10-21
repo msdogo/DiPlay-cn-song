@@ -78,7 +78,7 @@ class CarPlayHostClusterStartupTest {
         }
     }
 
-    @Test fun aLateDisplayUsesTheExistingVirtualStreamWithoutReconnecting() {
+    @Test fun aLateMagicSentryDisplayReconnectsToReplaceTheVirtualStream() {
         val config = invoke("clusterDisplayConfig") as AirPlayDisplayConfig
         assertEquals(1280, config.widthPixels)
         assertEquals(720, config.heightPixels)
@@ -86,19 +86,52 @@ class CarPlayHostClusterStartupTest {
         mockConstruction(ClusterMapPresentation::class.java).use { windows ->
             displayAdded(display())
             assertEquals(1, windows.constructed().size)
-            assertFalse(get("reconnectScheduled") as Boolean)
+            assertTrue(get("reconnectScheduled") as Boolean)
             assertEquals(0, get("restartGeneration"))
             assertSame(controller, get("controller"))
             assertEquals(16.0 / 9, MapMirrors.streamAspect, 0.0001)
+            val native = invoke("clusterDisplayConfig") as AirPlayDisplayConfig
+            assertEquals(1920, native.widthPixels)
+            assertEquals(720, native.heightPixels)
         }
     }
 
-    @Test fun aDisplayAddedDuringTheHandshakeStillWaitsForTheMainFrame() {
+    @Test fun aLateDiLink3DisplayReconnectsForItsDifferentNativeSize() {
+        val virtual = invoke("clusterDisplayConfig") as AirPlayDisplayConfig
+        assertEquals(1280, virtual.widthPixels)
+        assertEquals(720, virtual.heightPixels)
+        firstFrame()
+        mockConstruction(ClusterMapPresentation::class.java).use {
+            displayAdded(display(DiLink4ClusterDisplay.NAME, "w1280dp-h480dp-mdpi"))
+            assertTrue(get("reconnectScheduled") as Boolean)
+            val native = invoke("clusterDisplayConfig") as AirPlayDisplayConfig
+            assertNotEquals(virtual.widthPixels to virtual.heightPixels,
+                native.widthPixels to native.heightPixels)
+        }
+    }
+
+    @Test fun anAlreadyNegotiatedNativeDisplayCanReappearWithoutReconnecting() {
+        val original = display()
+        val native = invoke("clusterDisplayConfig") as AirPlayDisplayConfig
+        assertEquals(1920, native.widthPixels)
+        assertEquals(720, native.heightPixels)
+        ShadowDisplayManager.removeDisplay(original)
+        displays.remove(original)
+        firstFrame()
+        mockConstruction(ClusterMapPresentation::class.java).use { windows ->
+            displayAdded(display())
+            assertEquals(1, windows.constructed().size)
+            assertFalse(get("reconnectScheduled") as Boolean)
+            assertSame(controller, get("controller"))
+        }
+    }
+
+    @Test fun aDisplayAddedDuringTheHandshakeRequestsNativeRecoveryButStillWaitsForTheMainFrame() {
         invoke("clusterDisplayConfig")
         mockConstruction(ClusterMapPresentation::class.java).use { windows ->
             displayAdded(display())
             assertTrue(windows.constructed().isEmpty())
-            assertFalse(get("reconnectScheduled") as Boolean)
+            assertTrue(get("reconnectScheduled") as Boolean)
             firstFrame()
             assertEquals(1, windows.constructed().size)
         }
@@ -159,21 +192,35 @@ class CarPlayHostClusterStartupTest {
         }
     }
 
-    @Test fun lateAdbRouteConfirmationAttachesToTheNegotiatedStreamWithoutReconnect() {
+    @Test fun lateAdbRouteConfirmationReconnectsWhenTheSessionHasOnlyTheVirtualStream() {
+        val virtual = invoke("clusterDisplayConfig") as AirPlayDisplayConfig
+        assertEquals(1280, virtual.widthPixels)
         AirPlayPersistence.saveAdbClusterEnabled(activity, true)
-        ClusterActivityOutput.bind(activity, 0) { }
-        val token = "01234567-89ab-cdef-0123-456789abcdef"
-        ClusterActivityOutput::class.java.getDeclaredField("launchToken")
-            .apply { isAccessible = true }.set(ClusterActivityOutput, token)
-        ClusterActivityOutput::class.java.getDeclaredField("expectedDisplay")
-            .apply { isAccessible = true }.setInt(ClusterActivityOutput, 1)
-        val window = Robolectric.buildActivity(AdbClusterActivity::class.java).get()
-        assertTrue(ClusterActivityOutput.confirm(window, token, 1))
+        confirmAdbRoute()
         assertFalse(get("adbClusterConfigured") as Boolean)
         `when`(session.hasRenderedMainFrame).thenReturn(true)
         val surface = mock(Surface::class.java)
         invokeSurface("onClusterSurface", surface)
+        verify(sink, never()).setSurface(111, surface)
+        assertTrue(get("reconnectScheduled") as Boolean)
+        assertSame(controller, get("controller"))
+    }
+
+    @Test fun lateAdbRouteConfirmationKeepsAnAlreadyNegotiatedNativeStream() {
+        AirPlayPersistence.saveAdbClusterEnabled(activity, true)
+        val native = invoke("clusterDisplayConfig") as AirPlayDisplayConfig
+        assertEquals(1920, native.widthPixels)
+        assertEquals(720, native.heightPixels)
+        val window = confirmAdbRoute()
+        assertTrue(get("adbClusterConfigured") as Boolean)
+        val surface = mock(Surface::class.java)
+        ClusterActivityOutput.attach(window, surface)
+        invokeSurface("onClusterSurface", surface)
+        verify(sink, never()).setSurface(111, surface)
+        assertFalse(get("reconnectScheduled") as Boolean)
+        firstFrame()
         verify(sink).setSurface(111, surface)
+        verify(sink, never()).clearSurface(111, surface)
         assertFalse(get("reconnectScheduled") as Boolean)
         assertSame(controller, get("controller"))
     }
@@ -234,13 +281,26 @@ class CarPlayHostClusterStartupTest {
         shadowOf(Looper.getMainLooper()).idle()
     }
 
-    private fun display(): Int = ShadowDisplayManager.addDisplay("w1920dp-h720dp-mdpi", 5).also { id ->
-        displays += id
-        shadowOf(activity.getSystemService(DisplayManager::class.java).getDisplay(id)).apply {
-            setName("fission_magicsentry")
-            setFlags(Display.FLAG_PRESENTATION)
-        }
+    private fun confirmAdbRoute(): AdbClusterActivity {
+        ClusterActivityOutput.bind(activity, 0) { }
+        val token = "01234567-89ab-cdef-0123-456789abcdef"
+        ClusterActivityOutput::class.java.getDeclaredField("launchToken")
+            .apply { isAccessible = true }.set(ClusterActivityOutput, token)
+        ClusterActivityOutput::class.java.getDeclaredField("expectedDisplay")
+            .apply { isAccessible = true }.setInt(ClusterActivityOutput, 1)
+        val window = Robolectric.buildActivity(AdbClusterActivity::class.java).get()
+        assertTrue(ClusterActivityOutput.confirm(window, token, 1))
+        return window
     }
+
+    private fun display(name: String = "fission_magicsentry", qualifiers: String = "w1920dp-h720dp-mdpi"): Int =
+        ShadowDisplayManager.addDisplay(qualifiers, 5).also { id ->
+            displays += id
+            shadowOf(activity.getSystemService(DisplayManager::class.java).getDisplay(id)).apply {
+                setName(name)
+                setFlags(Display.FLAG_PRESENTATION)
+            }
+        }
 
     private fun displayAdded(id: Int) = (get("clusterDisplayListener") as DisplayManager.DisplayListener).onDisplayAdded(id)
     private fun listener(generation: Int = 0) = activity.javaClass

@@ -1502,7 +1502,13 @@ class CarPlayHostActivity : ComponentActivity() {
         }
         clusterSurface = surface
         // Never fall back to the main surface: two decoders must not draw into one Surface.
-        if (surface != null && clusterOutputReady()) sink?.setSurface(SCREEN_TYPE_ALT, surface)
+        if (surface != null) {
+            if (AdbClusterRouter.enabled(this) && ClusterActivityOutput.hasConfirmedRoute() &&
+                !adbClusterConfigured && controller != null) {
+                ClusterActivityOutput.setStreamActive(false)
+                reconnectAfterLoss("DiLink 4 cluster confirmed; requesting its native stream")
+            } else if (clusterOutputReady()) sink?.setSurface(SCREEN_TYPE_ALT, surface)
+        }
         updateClusterMapShown()
     }
 
@@ -1520,7 +1526,7 @@ class CarPlayHostActivity : ComponentActivity() {
             appendLog("Cluster map: display ${display.name} appeared")
             ensureClusterPresentation()
             if (controller != null && !clusterStreamOnDisplay) {
-                appendLog("Cluster map: keeping the negotiated stream on the late display; native size applies at the next connection")
+                reconnectAfterLoss("Cluster display appeared; requesting its stream")
             }
         }
         override fun onDisplayRemoved(displayId: Int) = Unit
