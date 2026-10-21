@@ -1019,6 +1019,11 @@
     <string name="car_sees_usb_device_not_iphone">L’auto rileva un dispositivo USB, ma non un iPhone</string>
     <string name="connection_help_no_usb_device">Usa un cavo dati USB (alcuni cavi servono solo a ricaricare), collegalo alla porta dati USB o CarPlay dell’auto e sblocca l’iPhone.</string>
     <string name="connection_help_usb_device_not_iphone">Usa un cavo dati USB nella porta dati USB o CarPlay dell’auto, scollega gli altri dispositivi USB e sblocca l’iPhone.</string>
+    <string name="car_hotspot_details_differ">Le impostazioni dell’hotspot dell’auto sono diverse da quelle salvate in DiPlay</string>
+    <string name="connection_help_car_hotspot_details_differ">In Configurazione connessione tocca Modifica hotspot salvato e copia nome e password dalle impostazioni dell’hotspot dell’auto, poi riprova.</string>
+    <string name="hotspot_interface_not_found">L’interfaccia dell’hotspot salvata in DiPlay non esiste su quest’auto</string>
+    <string name="connection_help_hotspot_interface_not_found">In Configurazione connessione tocca Modifica hotspot salvato, svuota Interfaccia dell’hotspot (facoltativa), poi riprova.</string>
+    <string name="connection_help_car_hotspot_off">Accendi l’hotspot dell’auto nelle impostazioni dell’auto, poi riprova.</string>
     <string name="cluster_projection_shape">Forma della mappa sul quadro strumenti</string>
     <string name="cluster_projection_shape_half">Mezza schermata</string>
     <string name="cluster_projection_shape_full">Schermo intero</string>

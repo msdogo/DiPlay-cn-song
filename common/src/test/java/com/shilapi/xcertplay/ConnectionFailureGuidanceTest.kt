@@ -45,11 +45,27 @@ class ConnectionFailureGuidanceTest {
             known = ConnectionFailureCause.WIFI_DIRECT_CHANNEL_UNAVAILABLE, mode = WirelessHotspotMode.WIFI_P2P))
     }
 
-    @Test fun aResetAndAStartupFailureStillComeBeforeAKnownCause() {
+    @Test fun aHotspotCauseNamesItsOwnHelp() {
+        assertEquals(R.string.connection_help_car_hotspot_off, guide(carHotspotOff,
+            startup = WirelessStartupFailure.HOTSPOT_CONFIGURATION, known = ConnectionFailureCause.CAR_HOTSPOT_OFF))
+        assertEquals(R.string.connection_help_car_hotspot_details_differ,
+            guide("Manual hotspot SSID does not match the active local AP configuration: 'Other'",
+                startup = WirelessStartupFailure.HOTSPOT_CONFIGURATION, known = ConnectionFailureCause.CAR_HOTSPOT_DETAILS_DIFFER))
+        assertEquals(R.string.connection_help_hotspot_interface_not_found, guide(hotspotNotReady,
+            startup = WirelessStartupFailure.HOTSPOT_NOT_READY, known = ConnectionFailureCause.HOTSPOT_INTERFACE_NOT_FOUND))
+        assertEquals(R.string.connection_help_hotspot, guide("Timed out waiting for the car hotspot",
+            startup = WirelessStartupFailure.HOTSPOT_NOT_READY, known = ConnectionFailureCause.CAR_HOTSPOT_START_TIMED_OUT))
+        assertEquals(R.string.connection_help_hotspot, guide("The car could not start its hotspot",
+            startup = WirelessStartupFailure.HOTSPOT_NOT_READY, known = ConnectionFailureCause.CAR_HOTSPOT_START_FAILED))
+    }
+
+    @Test fun aResetComesFirstAndAKnownCauseBeforeAStartupFailure() {
         assertEquals(R.string.connection_help_reset_wifi,
             guide(channelRejected, reset = true, known = ConnectionFailureCause.WIFI_DIRECT_CHANNEL_UNAVAILABLE))
-        assertEquals(R.string.connection_help_hotspot, guide("unknown",
-            startup = WirelessStartupFailure.HOTSPOT_NOT_READY, known = ConnectionFailureCause.CHOSEN_IPHONE_NOT_PAIRED))
+        assertEquals(R.string.connection_help_hotspot,
+            guide(carHotspotOff, startup = WirelessStartupFailure.HOTSPOT_CONFIGURATION))
+        assertEquals(R.string.connection_help_car_hotspot_off, guide(carHotspotOff,
+            startup = WirelessStartupFailure.HOTSPOT_CONFIGURATION, known = ConnectionFailureCause.CAR_HOTSPOT_OFF))
     }
 
     @Test fun messageHintsAreTransportAwareAndSafeForUnknownErrors() {
@@ -117,6 +133,8 @@ class ConnectionFailureGuidanceTest {
 
     private val channelRejected = "Could not establish WIFI_P2P hotspot: Wi-Fi Direct could not use channel 149. " +
         "Choose Auto or another channel. Wi-Fi P2P createGroup failed: ERROR (code=0)"
+    private val carHotspotOff = "The car hotspot is off. Turn it on in the car settings and connect again."
+    private val hotspotNotReady = "Could not establish MANUAL hotspot: Hotspot network is not ready"
 
     private fun guide(
         message: String,

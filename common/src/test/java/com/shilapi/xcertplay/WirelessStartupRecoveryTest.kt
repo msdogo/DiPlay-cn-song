@@ -199,6 +199,8 @@ class WirelessStartupRecoveryTest {
 
     private val hotspotNotReady = CarPlayStatus.Failed("Could not establish MANUAL hotspot: Hotspot network is not ready",
         startupFailure = WirelessStartupFailure.HOTSPOT_NOT_READY)
+    private val carHotspotOff = CarPlayStatus.Failed("The car hotspot is off. Turn it on in the car settings and connect again.",
+        startupFailure = WirelessStartupFailure.HOTSPOT_CONFIGURATION)
 
     // #809: the screen said "Getting CarPlay ready…" while the car hotspot never came up, and after the retries stopped.
     @Test fun aHotspotThatIsNotReadyIsNamedAndTheStopIsSaid() =
@@ -259,6 +261,45 @@ class WirelessStartupRecoveryTest {
         assertFalse(ReflectionHelpers.getField(activity, "startupRetryStopped"))
         assertEquals(View.GONE, retry.visibility)
         assertTrue(log.readText(), log.readText().contains("Failed: $notPaired; retrying in 2000ms generation=0 startupFailure=null"))
+    }
+
+    @Test fun aHotspotCauseIsNamedUntilTheRetriesStop() = assertNamedUntilRetriesStop(
+        hotspotNotReady.copy(knownCause = ConnectionFailureCause.HOTSPOT_INTERFACE_NOT_FOUND), R.string.hotspot_interface_not_found)
+
+    @Test fun aCarHotspotThatIsOffIsNamedWhereTheRetriesStop() {
+        val stage = TextView(activity)
+        ReflectionHelpers.setField(activity, "stageStatusView", stage)
+        report(status = carHotspotOff.copy(knownCause = ConnectionFailureCause.CAR_HOTSPOT_OFF))
+        assertEquals(activity.getString(R.string.car_hotspot_is_off) + "\n" +
+            activity.getString(R.string.wireless_startup_retries_exhausted), stage.text.toString())
+        assertEquals(0, budget().retries)
+        assertFalse(ReflectionHelpers.getField(activity, "reconnectScheduled"))
+        assertEquals(View.VISIBLE, retry.visibility)
+    }
+
+    private data class Retries(val logWithoutTimes: List<String>, val used: Int)
+
+    private fun retries(status: CarPlayStatus.Failed): Retries {
+        cleanup()
+        setup()
+        val log = File.createTempFile("retries", ".log", activity.filesDir)
+        ReflectionHelpers.setField(activity, "sessionLog", SessionLogFile(log))
+        repeat(6) { generation ->
+            ReflectionHelpers.setField(activity, "restartGeneration", generation)
+            ReflectionHelpers.setField(activity, "reconnectScheduled", false)
+            report(generation, status)
+        }
+        return Retries(log.readLines().map { it.substringAfter("  ") }, budget().retries)
+    }
+
+    @Test fun aHotspotCauseLeavesTheRetriesAndTheLogAsTheyWere() {
+        val notReady = retries(hotspotNotReady)
+        assertEquals(5, notReady.used)
+        assertTrue(notReady.toString(), notReady.logWithoutTimes.any { "retrying in" in it })
+        assertEquals(notReady, retries(hotspotNotReady.copy(knownCause = ConnectionFailureCause.HOTSPOT_INTERFACE_NOT_FOUND)))
+        val off = retries(carHotspotOff)
+        assertTrue(off.toString(), off.logWithoutTimes.any { "wireless startup recovery stopped" in it })
+        assertEquals(off, retries(carHotspotOff.copy(knownCause = ConnectionFailureCause.CAR_HOTSPOT_OFF)))
     }
 
     @Test fun staleGenerationUserDisconnectMenuAndDifferentOwnerCannotSchedule() {

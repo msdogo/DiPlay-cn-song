@@ -934,6 +934,11 @@
     <string name="car_sees_usb_device_not_iphone">ترى السيارة جهاز USB، لكنه ليس iPhone</string>
     <string name="connection_help_no_usb_device">استخدم كابل بيانات USB (بعض الكابلات للشحن فقط)، وصِله بمنفذ بيانات USB أو منفذ CarPlay في السيارة، وافتح قفل iPhone.</string>
     <string name="connection_help_usb_device_not_iphone">استخدم كابل بيانات USB في منفذ بيانات USB أو منفذ CarPlay في السيارة، وافصل أجهزة USB الأخرى، وافتح قفل iPhone.</string>
+    <string name="car_hotspot_details_differ">إعدادات نقطة اتصال السيارة تختلف عن المحفوظة في DiPlay</string>
+    <string name="connection_help_car_hotspot_details_differ">في «إعداد الاتصال»، اضغط «تعديل نقطة الاتصال المحفوظة» وانسخ الاسم وكلمة المرور من إعدادات نقطة اتصال السيارة، ثم أعد المحاولة.</string>
+    <string name="hotspot_interface_not_found">واجهة نقطة الاتصال المحفوظة في DiPlay غير موجودة في هذه السيارة</string>
+    <string name="connection_help_hotspot_interface_not_found">في «إعداد الاتصال»، اضغط «تعديل نقطة الاتصال المحفوظة» وامسح «واجهة نقطة الاتصال (اختياري)»، ثم أعد المحاولة.</string>
+    <string name="connection_help_car_hotspot_off">شغّل نقطة اتصال السيارة في إعدادات السيارة، ثم أعد المحاولة.</string>
     <string name="connection_help_hotspot">تأكد من تشغيل نقطة اتصال السيارة وأن اسمها وكلمة مرورها يطابقان إعدادات DiPlay. استخدم تردد 5 غيغاهرتز إن توفر ثم أعد المحاولة.</string>
     <string name="connection_help_iphone_wifi">أبقِ Wi-Fi وبلوتوث قيد التشغيل. اتصل بنقطة اتصال السيارة من iPhone وفعّل الانضمام التلقائي ثم حاول مجددًا. احفظ تقرير تشخيص إذا استمر الفشل.</string>
     <string name="connection_help_permissions">اسمح لـ DiPlay بأذونات USB أو الأجهزة القريبة أو الموقع المطلوبة على وحدة السيارة، ثم أعد المحاولة.</string>

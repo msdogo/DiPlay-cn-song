@@ -3,6 +3,7 @@ package com.shilapi.xcertplay
 import android.os.Handler
 import android.widget.TextView
 import com.shilapi.xcertplay.host.R
+import com.shilapi.xcertplay.network.WirelessStartupFailure
 import com.shilapi.xcertplay.orchestration.CarPlayStatus
 import com.shilapi.xcertplay.orchestration.ConnectionFailureCause
 import java.util.concurrent.ExecutorService
@@ -96,6 +97,27 @@ class CarPlayStageTextTest {
         assertStage(R.string.wifi_direct_channel_unavailable, CarPlayStatus.Failed("Could not establish WIFI_P2P hotspot: " +
             "Wi-Fi Direct could not use channel 149. Choose Auto or another channel. Wi-Fi P2P createGroup failed: ERROR (code=0)",
             knownCause = ConnectionFailureCause.WIFI_DIRECT_CHANNEL_UNAVAILABLE))
+
+        val off = "The car hotspot is off. Turn it on in the car settings and connect again."
+        assertStage(R.string.car_hotspot_is_off, CarPlayStatus.Failed(off,
+            startupFailure = WirelessStartupFailure.HOTSPOT_CONFIGURATION, knownCause = ConnectionFailureCause.CAR_HOTSPOT_OFF))
+        assertStage(R.string.connection_interrupted_retrying, CarPlayStatus.Failed(off))
+        assertStage(R.string.car_hotspot_details_differ,
+            CarPlayStatus.Failed("Manual hotspot SSID does not match the active local AP configuration: 'Other'",
+                startupFailure = WirelessStartupFailure.HOTSPOT_CONFIGURATION,
+                knownCause = ConnectionFailureCause.CAR_HOTSPOT_DETAILS_DIFFER))
+        assertStage(R.string.hotspot_interface_not_found,
+            CarPlayStatus.Failed("Could not establish MANUAL hotspot: Hotspot network is not ready",
+                startupFailure = WirelessStartupFailure.HOTSPOT_NOT_READY,
+                knownCause = ConnectionFailureCause.HOTSPOT_INTERFACE_NOT_FOUND))
+        assertStage(R.string.hotspot_control_timeout,
+            CarPlayStatus.Failed("Timed out waiting for the car hotspot. Open the car hotspot settings and connect again.",
+                startupFailure = WirelessStartupFailure.HOTSPOT_NOT_READY,
+                knownCause = ConnectionFailureCause.CAR_HOTSPOT_START_TIMED_OUT))
+        assertStage(R.string.hotspot_control_failed,
+            CarPlayStatus.Failed("The car could not start its hotspot. Open the car hotspot settings and connect again.",
+                startupFailure = WirelessStartupFailure.HOTSPOT_NOT_READY,
+                knownCause = ConnectionFailureCause.CAR_HOTSPOT_START_FAILED))
     }
 
     private fun assertStage(expected: Int, status: CarPlayStatus) {
