@@ -53,6 +53,7 @@ class CarPlayStageTextTest {
         assertStage(R.string.iphone_usb_mode_rejected,
             CarPlayStatus.Failed("CarPlay configuration request transferred -1 of 1 bytes"))
         assertStage(R.string.connect_your_iphone_with_a_usb_cable, CarPlayStatus.WaitingForIphone)
+        assertStage(R.string.getting_carplay_ready, CarPlayStatus.WaitingForReenumeration)
         assertStage(R.string.allow_the_connection_permission_to_continue, CarPlayStatus.RequestingIphonePermission)
         assertStage(R.string.looking_for_your_paired_iphone, CarPlayStatus.WaitingForPairedIphone)
         assertStage(R.string.connecting_to_your_iphone, CarPlayStatus.ConnectingBluetooth)
