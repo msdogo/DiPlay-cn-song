@@ -11,6 +11,8 @@ package com.shilapi.xcertplay.orchestration
 internal class WiredStartWatchdog(
     private val schedule: (Long, () -> Unit) -> (() -> Unit),
     private val onTimeout: () -> Unit,
+    private val secondRequestCanStillGoOut: () -> Boolean = { false },
+    private val onHold: () -> Unit = {},
     private val timeoutMillis: Long = TIMEOUT_MILLIS,
 ) {
     private var armed = false
