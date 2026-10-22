@@ -41,6 +41,16 @@ class RealtimeMusicClockTrimTest {
 
     @Test fun aDiLinkKeepsTheIphonesRateFromTheStartWithTheLongestBuffer() = keepsTheRate(Car(startMs = 1000))
 
+    /**
+     * #1074's head unit gets its bursts 430 ms apart, give or take 35 ms. With the longest buffer most of them find
+     * the track full, so they land while a write is blocked. The seed is the network's timing.
+     */
+    @Test fun burstsThatFindTheTrackFullKeepTheIphonesRateWithTheLongestBuffer() =
+        keepsTheRate(Car(startMs = 1000, burstMs = 430, jitterMs = 35, seed = 9), seconds = 240)
+
+    @Test fun burstsThatFindTheTrackFullKeepTheIphonesRateWith500Ms() =
+        keepsTheRate(Car(startMs = 500, burstMs = 430, jitterMs = 35, seed = 6), seconds = 240)
+
     @Test fun steadyArrivalsKeepTheIphonesRateFromTheStart() =
         keepsTheRate(Car(startMs = 300, drift = 0.0, burstMs = 21, jitterMs = 0))
 
@@ -54,8 +64,8 @@ class RealtimeMusicClockTrimTest {
     @Test fun aSlowHeadUnitIsTrimmedToItsDriftWithoutRunningLow() =
         settlesAtTheDrift(Car(startMs = 1000, drift = -0.0025), lowestMs = 800)
 
-    private fun keepsTheRate(car: Car) {
-        val run = car.play(seconds = 120)
+    private fun keepsTheRate(car: Car, seconds: Int = 120) {
+        val run = car.play(seconds)
         val off = run.seconds.withIndex().filter { abs(it.value.rate - car.iphonesRate) > car.iphonesRate * 0.001 }
         assertTrue("${off.size} s off ${car.iphonesRate.roundToInt()} Hz ± 0.1 %, from " +
             off.take(8).joinToString { "${it.index + 1} s: ${it.value.rate}" }, off.isEmpty())
@@ -82,10 +92,11 @@ class RealtimeMusicClockTrimTest {
         val jitterMs: Long = 8,
         val gapChancePerMs: Double = 0.0,
         val learned: Double = 0.0,
+        seed: Int = 1068,
     ) {
         val iphonesRate = 48_000 / (1 + drift)
         private val type = Class.forName("com.shilapi.xcertplay.media.AudioRenderer")
-        private val network = Random(1068)
+        private val network = Random(seed)
         private val gaps = Random(1070)
         private val arrivals = ArrayDeque<Pair<Double, Int>>()
         private val reports = mutableListOf<String>()
