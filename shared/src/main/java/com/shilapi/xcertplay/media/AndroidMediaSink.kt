@@ -1748,7 +1748,7 @@ private class AudioRenderer(
     private val echoReference: EchoReference? = null,
     voiceFilter: Boolean = false,
 ) : Closeable {
-    private data class AudioPacket(val rtp: ByteArray, val sample: Int)
+    private data class AudioPacket(val rtp: ByteArray, val sample: Int, val arrivedNs: Long)
 
     private val pcmChannels = if (format.channels >= 2) 2 else 1
     private val voiceFilter = if (voiceFilter && format.sampleRate > 0) VoiceFilter(format.sampleRate, pcmChannels) else null
@@ -1830,9 +1830,9 @@ private class AudioRenderer(
     }
 
     fun submit(rtp: ByteArray, sample: Int) {
+        val now = System.nanoTime()
         if (started) {
             packetsReceived.incrementAndGet()
-            val now = System.nanoTime()
             val previous = lastArrivalNs.getAndSet(now)
             if (previous != 0L) maxArrivalGapMs.accumulateAndGet((now - previous) / 1_000_000L, ::maxOf)
             newestRtpSample = sample
@@ -1849,7 +1849,7 @@ private class AudioRenderer(
                 }
             }
         }
-        if (!started || !queue.offer(AudioPacket(rtp, sample))) {
+        if (!started || !queue.offer(AudioPacket(rtp, sample, now))) {
             if (started) {
                 packetsDropped.incrementAndGet()
                 packetsDroppedTotal.incrementAndGet()
@@ -2498,7 +2498,7 @@ private class AudioRenderer(
         }
         val head = track.playbackHeadPosition
         trim.sample(bufferProgress.queuedBytes(head) / frameBytes, now, compressedPcmFrames,
-            headMoving = head != headAtPlaybackStart)
+            headMoving = head != headAtPlaybackStart, arrivedFrameNs = queuedFrameNsSince(trim.lastSampleNs, now))
         val rate = trim.rateDue(now) ?: return
         val result = runCatching { track.setPlaybackRate(rate) }.getOrDefault(AudioTrack.ERROR)
         if (result != AudioTrack.SUCCESS) {
@@ -2506,6 +2506,24 @@ private class AudioRenderer(
             clockTrim = null
             report("Audio: clock trim off audioType=${format.audioType} rate=$rate result=$result")
         }
+    }
+
+    /** For the packets queued since [sinceNs], the frames each adds to the queue times how long it has waited. */
+    private fun queuedFrameNsSince(sinceNs: Long, nowNs: Long): Double {
+        val clockRate = format.rtpClockRate.coerceAtLeast(1)
+        var frameNs = 0.0
+        var previousSample: Int? = null
+        for (packet in queue) {
+            val previous = previousSample
+            previousSample = packet.sample
+            if (previous == null || packet.arrivedNs <= sinceNs) continue
+            // As in MediaPacketLagGuard.pendingFrames, a packet adds the RTP time since the one before it, and a
+            // jump of more than a second is the iPhone restarting its timestamps, not audio.
+            val rtpFrames = (packet.sample.toLong() - previous) and 0xffff_ffffL
+            if (rtpFrames > clockRate) continue
+            frameNs += rtpFrames.toDouble() * format.sampleRate / clockRate * (nowNs - packet.arrivedNs)
+        }
+        return frameNs
     }
 
     private fun maintainPlaybackBuffer() {

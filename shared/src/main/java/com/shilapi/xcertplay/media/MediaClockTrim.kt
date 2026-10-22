@@ -30,7 +30,9 @@ internal class MediaClockTrim(
     }
 
     private var level: Double? = null
-    private var lastSampleNs = 0L
+    /** When the level was last sampled. */
+    var lastSampleNs = 0L
+        private set
     private var lastBuffered = 0L
     private var lastUpdateNs: Long? = null
     private var compressedBacklog = false
@@ -44,8 +46,12 @@ internal class MediaClockTrim(
     var rate = sampleRate
         private set
 
-    /** Include compressed packets waiting for decode: those frames are already queued audio. */
-    fun sample(queuedFrames: Long, nowNs: Long, compressedFrames: Long = 0L, headMoving: Boolean = true) {
+    /**
+     * Include compressed packets waiting for decode: those frames are already queued audio. [arrivedFrameNs] sums,
+     * over each frame that arrived since [lastSampleNs], how long it has been queued.
+     */
+    fun sample(queuedFrames: Long, nowNs: Long, compressedFrames: Long = 0L, headMoving: Boolean = true,
+        arrivedFrameNs: Double = 0.0) {
         if (targetFrames <= 0L) return
         // Decoder backpressure is not evidence that the head unit's clock runs at a different
         // rate; do not teach the *next* music stream an artificial clock correction.
@@ -56,7 +62,10 @@ internal class MediaClockTrim(
         // Samples come only after writes, and over Wi-Fi the writes come in bursts 0.4 s apart: the level
         // just after one is its peak. Average what was queued over the time since the last write, while
         // the track drained it, or a 300 ms target reads as overfull and the trim plays fast (#807).
-        val meanSinceLastWrite = drainedMean(lastBuffered.toDouble(), rate * elapsedNs / 1e9)
+        // A write that finds the track full blocks while more audio arrives; that audio counts from its
+        // arrival, or a full track reads up to 300 ms low and the trim wanders for minutes (#1074).
+        val meanSinceLastWrite = drainedMean(lastBuffered.toDouble(), rate * elapsedNs / 1e9) +
+            if (elapsedNs > 0) arrivedFrameNs / elapsedNs else 0.0
         val measure = measuring
         if (measure != null) {
             if (!headMoving) return
