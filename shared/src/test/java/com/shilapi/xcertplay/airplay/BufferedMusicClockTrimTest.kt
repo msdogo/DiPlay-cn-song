@@ -46,12 +46,10 @@ class BufferedMusicClockTrimTest {
 
     @Test fun aSlowHeadUnitIsTrimmedToItsDriftWithoutRunningLow() = settlesAtTheDrift(1000, -0.0025)
 
-    @Test fun realtimeMusicWithTheSameStartIsTrimmedAsBefore() {
+    @Test fun realtimeMusicWithTheSameStartAlsoKeepsTheIphonesRate() {
         val realtime = HeadUnit(300, payloadType = AudioChannelMapper.STREAM_TYPE_MAIN_HIGH_AUDIO)
         val phase = playFromStartAndAfterASkip(realtime, 125).first()
-        assertEquals("${phase.name}: peak rate, lowest rate after it, final rate, lowest level ms",
-            listOf(48_720L, 47_708L, 47_965L, 137L),
-            listOf(phase.peakRate.toLong(), phase.lowestRateAfterPeak.toLong(), phase.finalRate.toLong(), phase.lowestLevelMs))
+        assertEquals("${phase.name}: seconds off 48000 ± 0.1 %", emptyList<String>(), phase.secondsOffTheIphonesRate)
     }
 
     @Test fun afterARebufferTheTrimSteersToTheLevelMusicResumesAt() {
@@ -69,6 +67,12 @@ class BufferedMusicClockTrimTest {
 
     @Test fun aStallWhileTheTrimMeasuresDoesNotSetItsTarget() {
         val phase = playFromStartAndAfterASkip(HeadUnit(300), 125, iphoneStalls(sentMs = 3_000, untilMs = 3_100)).first()
+        assertEquals("${phase.name}: underruns", 0, phase.underruns)
+        assertEquals("${phase.name}: seconds off 48000 ± 0.1 %", emptyList<String>(), phase.secondsOffTheIphonesRate)
+    }
+
+    @Test fun aStallEarlyInTheMeasurementDoesNotSetItsTarget() {
+        val phase = playFromStartAndAfterASkip(HeadUnit(300), 40, iphoneStalls(sentMs = 1_500, untilMs = 1_700)).first()
         assertEquals("${phase.name}: underruns", 0, phase.underruns)
         assertEquals("${phase.name}: seconds off 48000 ± 0.1 %", emptyList<String>(), phase.secondsOffTheIphonesRate)
     }
@@ -100,8 +104,6 @@ class BufferedMusicClockTrimTest {
     private class Second(val rate: Int, val levelMs: Long)
 
     private class Phase(val name: String, val seconds: List<Second>, val underruns: Int, val reports: List<String>) {
-        val peakRate get() = seconds.maxBy { abs(it.rate - 48_000) }.rate
-        val lowestRateAfterPeak get() = seconds.drop(seconds.indexOfFirst { it.rate == peakRate }).minOf { it.rate }
         val finalRate get() = seconds.last().rate
         val lowestLevelMs get() = seconds.drop(SETTLED_SECONDS - 1).minOf { it.levelMs }
         val secondsOffTheIphonesRate get() =
