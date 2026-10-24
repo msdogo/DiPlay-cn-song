@@ -44,6 +44,13 @@ internal object DiLink51ClusterLayout {
         CarPlayClusterDisplay.config(width, height, scalePercent = 100).copy(safeArea = null)
 
     fun supported(fingerprint: String = Build.FINGERPRINT): Boolean = fingerprint in FINGERPRINTS
+
+    /**
+     * The stream size for this firmware's cluster layers, known before the cluster display appears: CarPlay
+     * negotiates the cluster stream ahead of the display (#981), and the N9's layers are 2560x720 (#301).
+     */
+    fun streamSize(fingerprint: String = Build.FINGERPRINT): Pair<Int, Int> =
+        if (fingerprint == DENZA_N9_FINGERPRINT) N9_STREAM_WIDTH to STREAM_HEIGHT else STREAM_WIDTH to STREAM_HEIGHT
     fun theme(context: Context): Theme = Theme.entries.firstOrNull {
         it.name == context.getSharedPreferences(PREFS, 0).getString("theme", null)
     } ?: Theme.SCENARIO

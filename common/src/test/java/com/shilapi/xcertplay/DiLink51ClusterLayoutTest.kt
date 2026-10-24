@@ -99,6 +99,19 @@ class DiLink51ClusterLayoutTest {
         }
     }
 
+    @Test fun theN9StreamSizeIsKnownBeforeItsClusterDisplayAppears() {
+        // The cluster stream is negotiated before the display exists (#981), so the size comes from the firmware.
+        assertEquals(2560 to 720, DiLink51ClusterLayout.streamSize(DiLink51ClusterLayout.DENZA_N9_FINGERPRINT))
+        assertEquals(1920 to 720, DiLink51ClusterLayout.streamSize(firmware))
+        assertEquals(1920 to 720, DiLink51ClusterLayout.streamSize(DiLink51ClusterLayout.LEOPARD5_FINGERPRINT))
+        val (width, height) = DiLink51ClusterLayout.streamSize(DiLink51ClusterLayout.DENZA_N9_FINGERPRINT)
+        for (theme in Theme.entries) {
+            val plan = DiLink51ClusterLayout.plan(2560, 720, theme)!!
+            assertEquals(width, plan.streamWidth)
+            assertEquals(height, plan.streamHeight)
+        }
+    }
+
     @Test fun theWideN9ClusterGetsAStreamOfItsOwnSizeCroppedAtNativeScale() {
         val config = DiLink51ClusterLayout.streamConfig(2560, 720)
         assertEquals(2560, config.widthPixels)

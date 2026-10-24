@@ -1587,9 +1587,10 @@ open class CarPlayHostActivity : ComponentActivity() {
         val theme = effectiveClusterTheme()
         if (DiLink51ClusterLayout.supported()) {
             clusterStreamOnDisplay = true
-            return DiLink51ClusterLayout.streamConfig().also {
+            val (streamWidth, streamHeight) = DiLink51ClusterLayout.streamSize()
+            return DiLink51ClusterLayout.streamConfig(streamWidth, streamHeight).also {
                 MapMirrors.streamAspect = it.widthPixels.toDouble() / it.heightPixels
-                appendLog("Cluster map: fixed 1920x720 stream; layout=$theme")
+                appendLog("Cluster map: fixed ${it.widthPixels}x${it.heightPixels} stream; layout=$theme")
             }
         }
         val display = ClusterMapPresentation.findDisplay(this, theme)
