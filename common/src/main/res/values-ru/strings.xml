@@ -890,6 +890,7 @@
     <string name="hotspot_interface_not_found">Интерфейс точки доступа, сохранённый в DiPlay, отсутствует в этом автомобиле</string>
     <string name="connection_help_hotspot_interface_not_found">В разделе «Настройка подключения» нажмите «Изменить сохранённую точку доступа», очистите поле «Интерфейс точки доступа (необязательно)» и повторите попытку.</string>
     <string name="connection_help_car_hotspot_off">Включите точку доступа автомобиля в настройках автомобиля и повторите попытку.</string>
+    <string name="last_connection_attempt">Последняя попытка подключения (%1$s): %2$s</string>
     <string name="connection_help_hotspot">Убедитесь, что точка доступа автомобиля включена, а имя и пароль совпадают с настройками DiPlay. Если возможно, выберите 5 ГГц и повторите попытку.</string>
     <string name="connection_help_iphone_wifi">Включите Wi-Fi и Bluetooth. Подключите iPhone к точке доступа автомобиля и включите автоподключение. Повторите попытку; при сбое сохраните отчёт.</string>
     <string name="connection_help_permissions">Разрешите DiPlay доступ к USB, устройствам поблизости или геолокации на головном устройстве, если требуется, и повторите попытку.</string>

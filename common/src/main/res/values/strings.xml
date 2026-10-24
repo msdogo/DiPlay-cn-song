@@ -993,6 +993,7 @@
     <string name="hotspot_interface_not_found">The hotspot interface saved in DiPlay does not exist on this car</string>
     <string name="connection_help_hotspot_interface_not_found">In Connection setup, tap Edit saved hotspot, clear Hotspot interface (optional), then retry.</string>
     <string name="connection_help_car_hotspot_off">Turn on the car hotspot in the car settings, then retry.</string>
+    <string name="last_connection_attempt">Last connection attempt (%1$s): %2$s</string>
     <string name="connection_help_hotspot">Check that the car hotspot is on and its name and password match DiPlay settings. If available, use 5 GHz, then retry.</string>
     <string name="connection_help_iphone_wifi">Keep Wi-Fi and Bluetooth on. On the iPhone, join the car hotspot and enable Auto-Join, then retry. Save a diagnostic report if it still fails.</string>
     <string name="connection_help_permissions">Allow the requested USB, Nearby devices or Location permissions for DiPlay on the head unit, then retry.</string>

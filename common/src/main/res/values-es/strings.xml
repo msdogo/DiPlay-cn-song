@@ -890,6 +890,7 @@
     <string name="hotspot_interface_not_found">La interfaz del punto de acceso guardada en DiPlay no existe en este coche</string>
     <string name="connection_help_hotspot_interface_not_found">En «Configuración de conexión», toca «Editar punto de acceso guardado», borra «Interfaz del punto de acceso (opcional)» y reintenta.</string>
     <string name="connection_help_car_hotspot_off">Activa el punto de acceso del coche en la configuración del coche y reintenta.</string>
+    <string name="last_connection_attempt">Último intento de conexión (%1$s): %2$s</string>
     <string name="connection_help_hotspot">Comprueba que el punto de acceso del coche esté activo y que su nombre y contraseña coincidan con DiPlay. Si es posible, usa 5 GHz y reintenta.</string>
     <string name="connection_help_iphone_wifi">Mantén Wi-Fi y Bluetooth activos. Conecta el iPhone al punto de acceso del coche y activa la conexión automática. Reintenta o guarda un informe de diagnóstico.</string>
     <string name="connection_help_permissions">Concede a DiPlay los permisos necesarios de USB, dispositivos cercanos o ubicación en la unidad y reintenta.</string>
