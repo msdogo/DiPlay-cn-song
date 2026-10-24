@@ -132,6 +132,7 @@ sealed class CarPlayStatus {
     data object WirelessActiveFallback : CarPlayStatus()
     data object DiscoveringIphone : CarPlayStatus()
     data object WaitingForIphone : CarPlayStatus()
+    data class IphoneNotListed(val nonHubDeviceListed: Boolean) : CarPlayStatus()
     data object RequestingIphonePermission : CarPlayStatus()
     data object WaitingForReenumeration : CarPlayStatus()
     data object SelectingConfiguration : CarPlayStatus()
@@ -316,6 +317,7 @@ class CarPlayController(
     private var ch341PermissionCloseable: Closeable? = null
     private var lastCh341Listing: String? = null
     private var lastIphoneListing: String? = null
+    private var iphoneWaitStartedAt: Long? = null
     private var vpnLatch = CountDownLatch(1)
     private val teardownComplete = CountDownLatch(1)
 
@@ -1886,6 +1888,7 @@ class CarPlayController(
         pendingUsbAdbGrants.clear()
         phase = Phase.IPHONE
         reenumerationAttempts = 0
+        iphoneWaitStartedAt = null
         onStatus(CarPlayStatus.DiscoveringIphone)
         checkIphoneAvailability()
     }
@@ -1895,7 +1898,12 @@ class CarPlayController(
         val device = iphoneHost.discover().firstOrNull()
         if (device == null) {
             reportIphoneMissing()
-            onStatus(CarPlayStatus.WaitingForIphone)
+            val now = SystemClock.elapsedRealtime()
+            val waitStarted = iphoneWaitStartedAt ?: now.also { iphoneWaitStartedAt = it }
+            onStatus(
+                if (now - waitStarted < IPHONE_NOT_LISTED_AFTER_MILLIS) CarPlayStatus.WaitingForIphone
+                else CarPlayStatus.IphoneNotListed(iphoneHost.listsNonHubDevice()),
+            )
             scheduleAvailabilityPoll(Phase.IPHONE, ::checkIphoneAvailability)
         } else {
             lastIphoneListing = null
@@ -3140,6 +3148,9 @@ class CarPlayController(
             "STEP usb/discover: searching for an iPhone USB device"
         CarPlayStatus.WaitingForIphone ->
             "STEP usb/wait: iPhone USB device not present; polling"
+        is CarPlayStatus.IphoneNotListed ->
+            "STEP usb/wait: wired iPhone not listed after ${IPHONE_NOT_LISTED_AFTER_MILLIS / 1_000} s; " +
+                "other USB devices=$nonHubDeviceListed"
         CarPlayStatus.RequestingIphonePermission ->
             "STEP usb/permission: requesting USB access to the iPhone"
         CarPlayStatus.WaitingForReenumeration ->
@@ -3188,6 +3199,7 @@ class CarPlayController(
         private const val MAXIMUM_REENUMERATION_ATTEMPTS = 2
         /** An iPhone answers the mode request within about a second; one took six (#335). */
         const val REENUMERATION_WAIT_MILLIS = 10_000L
+        private const val IPHONE_NOT_LISTED_AFTER_MILLIS = 20_000L
         private const val START_SESSION_PROGRESS = "iap2 tx=0x4301"
         private const val EXECUTOR_CLOSE_TIMEOUT_MILLIS = 2_000L
         private const val ADAPTER_ADDRESS_PLACEHOLDER = "02:00:00:00:00:00"

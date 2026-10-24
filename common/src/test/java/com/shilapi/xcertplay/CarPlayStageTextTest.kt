@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Before
 import org.junit.Test
@@ -48,12 +49,34 @@ class CarPlayStageTextTest {
         stagesFollowTheConnection()
     }
 
+    @Test @Config(qualifiers = "zh-rTW") fun aWiredWaitWithoutAnIphoneSwapsTheCableTipForAdviceAboutTheCarPort() {
+        ReflectionHelpers.callInstanceMethod<Any>(activity, "buildContentView")
+        val stage = ReflectionHelpers.getField<TextView>(activity, "stageStatusView")
+        val instructions = ReflectionHelpers.getField<TextView>(activity, "connectionInstructionsView")
+        val cableTip = activity.getString(R.string.use_a_usb_data_cable_and_unlock_your_iphone_allow_trust_an)
+        val noDeviceTip = activity.getString(R.string.connection_help_no_usb_device)
+        val notIphoneTip = activity.getString(R.string.connection_help_usb_device_not_iphone)
+        fun assertInstructions(expected: String, status: CarPlayStatus) {
+            report(status)
+            assertEquals(status.toString(), expected, instructions.text.toString())
+            assertFalse(status.toString(), stage.text.contains(expected))
+        }
+        assertInstructions(cableTip, CarPlayStatus.WaitingForIphone)
+        assertInstructions(noDeviceTip, CarPlayStatus.IphoneNotListed(nonHubDeviceListed = false))
+        assertInstructions(notIphoneTip, CarPlayStatus.IphoneNotListed(nonHubDeviceListed = true))
+        assertInstructions(cableTip, CarPlayStatus.WaitingForIphone)
+        assertInstructions(noDeviceTip, CarPlayStatus.IphoneNotListed(nonHubDeviceListed = false))
+        assertInstructions(cableTip, CarPlayStatus.RequestingIphonePermission)
+    }
+
     private fun stagesFollowTheConnection() {
         // A wired Android 7.1 failure (#557) is a retry, not a stage that never ends.
         assertStage(R.string.connection_interrupted_retrying, CarPlayStatus.Failed("Invalid argument"))
         assertStage(R.string.iphone_usb_mode_rejected,
             CarPlayStatus.Failed("CarPlay configuration request transferred -1 of 1 bytes"))
         assertStage(R.string.connect_your_iphone_with_a_usb_cable, CarPlayStatus.WaitingForIphone)
+        assertStage(R.string.car_sees_no_usb_device, CarPlayStatus.IphoneNotListed(nonHubDeviceListed = false))
+        assertStage(R.string.car_sees_usb_device_not_iphone, CarPlayStatus.IphoneNotListed(nonHubDeviceListed = true))
         assertStage(R.string.getting_carplay_ready, CarPlayStatus.WaitingForReenumeration)
         assertStage(R.string.allow_the_connection_permission_to_continue, CarPlayStatus.RequestingIphonePermission)
         assertStage(R.string.looking_for_your_paired_iphone, CarPlayStatus.WaitingForPairedIphone)
@@ -76,12 +99,13 @@ class CarPlayStageTextTest {
     }
 
     private fun assertStage(expected: Int, status: CarPlayStatus) {
-        val reporter = ReflectionHelpers.callInstanceMethod<(CarPlayStatus) -> Unit>(
-            activity, "createStatusReporter",
-            ClassParameter.from(Int::class.javaPrimitiveType, ReflectionHelpers.getField<Int>(activity, "restartGeneration")),
-        )
-        reporter(status)
+        report(status)
         val shown = ReflectionHelpers.getField<TextView>(activity, "stageStatusView").text.toString()
         assertEquals(status.toString(), activity.getString(expected), shown)
     }
+
+    private fun report(status: CarPlayStatus) = ReflectionHelpers.callInstanceMethod<(CarPlayStatus) -> Unit>(
+        activity, "createStatusReporter",
+        ClassParameter.from(Int::class.javaPrimitiveType, ReflectionHelpers.getField<Int>(activity, "restartGeneration")),
+    )(status)
 }

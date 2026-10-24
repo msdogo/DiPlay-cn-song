@@ -1015,6 +1015,10 @@
     <string name="connection_help_choose_iphone">All’auto sono associati più dispositivi. Torna a DiPlay, tocca Scegli iPhone e scegli il tuo, poi riprova.</string>
     <string name="wifi_direct_channel_unavailable">Wi-Fi Direct non può usare il canale preferito</string>
     <string name="connection_help_wifi_direct_channel">In Configurazione connessione imposta Canale Wi-Fi Direct preferito su Automatico, poi riprova.</string>
+    <string name="car_sees_no_usb_device">L’auto non rileva ancora alcun dispositivo USB</string>
+    <string name="car_sees_usb_device_not_iphone">L’auto rileva un dispositivo USB, ma non un iPhone</string>
+    <string name="connection_help_no_usb_device">Usa un cavo dati USB (alcuni cavi servono solo a ricaricare), collegalo alla porta dati USB o CarPlay dell’auto e sblocca l’iPhone.</string>
+    <string name="connection_help_usb_device_not_iphone">Usa un cavo dati USB nella porta dati USB o CarPlay dell’auto, scollega gli altri dispositivi USB e sblocca l’iPhone.</string>
     <string name="cluster_projection_shape">Forma della mappa sul quadro strumenti</string>
     <string name="cluster_projection_shape_half">Mezza schermata</string>
     <string name="cluster_projection_shape_full">Schermo intero</string>

@@ -941,6 +941,10 @@
     <string name="connection_help_choose_iphone">車機已與多台裝置配對。請返回 DiPlay，點一下「選擇 iPhone」並選擇你的 iPhone，再重試。</string>
     <string name="wifi_direct_channel_unavailable">Wi-Fi Direct 無法使用首選頻道</string>
     <string name="connection_help_wifi_direct_channel">請在「連線設定」將「首選 Wi-Fi Direct 頻道」設為「自動」，再重試。</string>
+    <string name="car_sees_no_usb_device">車機尚未偵測到任何 USB 裝置</string>
+    <string name="car_sees_usb_device_not_iphone">車機偵測到 USB 裝置，但不是 iPhone</string>
+    <string name="connection_help_no_usb_device">請使用 USB 傳輸線（有些線只能充電），插入車機的 USB 資料連線埠或 CarPlay 連線埠，並解鎖 iPhone。</string>
+    <string name="connection_help_usb_device_not_iphone">請用 USB 傳輸線連接車機的 USB 資料連線埠或 CarPlay 連線埠，拔除其他 USB 裝置，並解鎖 iPhone。</string>
     <string name="connection_help_hotspot">請確認車機熱點已開啟，且名稱與密碼和 DiPlay 設定相同。如有支援，改用 5 GHz 後重試。</string>
     <string name="connection_help_iphone_wifi">保持 Wi-Fi 與藍牙開啟。在 iPhone 上加入車機熱點並啟用自動加入，再重試。若仍失敗，請儲存診斷報告。</string>
     <string name="connection_help_permissions">請在車機上允許 DiPlay 所需的 USB、附近裝置或位置資訊權限，再重試。</string>
