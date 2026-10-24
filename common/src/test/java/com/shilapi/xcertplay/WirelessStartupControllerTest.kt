@@ -18,6 +18,8 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.Implementation
+import org.robolectric.annotation.Implements
 import org.robolectric.annotation.LooperMode
 import org.robolectric.util.ReflectionHelpers
 import java.io.IOException
@@ -29,14 +31,18 @@ import java.util.concurrent.atomic.AtomicInteger
 @LooperMode(LooperMode.Mode.PAUSED)
 class WirelessStartupControllerTest {
     private val statuses = mutableListOf<CarPlayStatus>()
-    private fun controller(chosenIphone: String? = null) = CarPlayController(object : ContextWrapper(RuntimeEnvironment.getApplication()) {
+    private fun controller(
+        chosenIphone: String? = null,
+        mode: WirelessHotspotMode = WirelessHotspotMode.WIFI_P2P,
+    ) = CarPlayController(object : ContextWrapper(RuntimeEnvironment.getApplication()) {
         override fun getApplicationContext(): Context = this
         override fun bindService(service: Intent, conn: ServiceConnection, flags: Int): Boolean = false
     },
         CarPlayRuntimeConfig(mfiTarget = MfiTarget.LOCAL, transport = CarPlayTransport.WIRELESS,
             identification = Iap2IdentificationConfig(name = "test", modelIdentifier = "test", manufacturer = "test",
                 serialNumber = "test", firmwareVersion = "1", hardwareVersion = "1", carPlayUsbInterfaceNumber = 3),
-            wirelessBluetoothDeviceAddress = chosenIphone),
+            wirelessBluetoothDeviceAddress = chosenIphone, wirelessHotspotMode = mode,
+            manualHotspotSsid = "Car", manualHotspotPassphrase = "12345678"),
         AirPlayConfig("test", "test", "", "1", AirPlayDisplayConfig(800, 480)),
         AirPlayIdentity(ByteArray(32), ByteArray(32), "test"), PairingStore(),
         object : AirPlaySessionListener {}, object : AirPlayMediaHandler {}, statuses::add)
@@ -91,6 +97,67 @@ class WirelessStartupControllerTest {
             assertNull(failure.startupFailure)
             assertEquals("Could not establish WIFI_P2P hotspot: no channel", failure.message)
         } finally { controller.close(); controller.awaitClosed(2_000) }
+    }
+
+    @Test fun aStartupFailureCarriesItsKnownCause() {
+        val controller = controller()
+        try {
+            fail(controller, 0, IOException("Could not establish MANUAL hotspot: Hotspot network is not ready",
+                WirelessStartupException(WirelessStartupFailure.HOTSPOT_NOT_READY, "Hotspot network is not ready",
+                    ConnectionFailureCause.HOTSPOT_INTERFACE_NOT_FOUND)))
+            shadowOf(Looper.getMainLooper()).idle()
+            val failure = statuses.single() as CarPlayStatus.Failed
+            assertEquals(WirelessStartupFailure.HOTSPOT_NOT_READY, failure.startupFailure)
+            assertEquals(ConnectionFailureCause.HOTSPOT_INTERFACE_NOT_FOUND, failure.knownCause)
+            assertEquals("Could not establish MANUAL hotspot: Hotspot network is not ready", failure.message)
+        } finally { controller.close(); controller.awaitClosed(2_000) }
+    }
+
+    private fun hotspotStartFailure(): WirelessStartupException {
+        val controller = controller(mode = WirelessHotspotMode.MANUAL)
+        try {
+            return assertThrows(InvocationTargetException::class.java) {
+                controller.javaClass.getDeclaredMethod("startWirelessHotspot", Int::class.javaPrimitiveType)
+                    .apply { isAccessible = true }.invoke(controller, 0)
+            }.cause as WirelessStartupException
+        } finally { controller.close(); controller.awaitClosed(2_000) }
+    }
+
+    @Test @Config(shadows = [CarHotspotOffConnectTest.HotspotState::class])
+    fun aCarHotspotReportedOffIsNamed() {
+        CarHotspotOffConnectTest.HotspotState.on = false
+        val failure = hotspotStartFailure()
+        assertEquals(WirelessStartupFailure.HOTSPOT_CONFIGURATION, failure.reason)
+        assertEquals("The car hotspot is off. Turn it on in the car settings and connect again.", failure.message)
+        assertEquals(ConnectionFailureCause.CAR_HOTSPOT_OFF, failure.knownCause)
+    }
+
+    @Test @Config(shadows = [Tethering::class])
+    fun aCarHotspotThatDidNotStartIsNamed() {
+        CarHotspotSettings.setEnabled(RuntimeEnvironment.getApplication(), true)
+        for ((result, reason, cause) in listOf(
+            Triple(CarHotspotTethering.Result.TIMED_OUT, WirelessStartupFailure.HOTSPOT_NOT_READY,
+                ConnectionFailureCause.CAR_HOTSPOT_START_TIMED_OUT),
+            Triple(CarHotspotTethering.Result.FAILED, WirelessStartupFailure.HOTSPOT_NOT_READY,
+                ConnectionFailureCause.CAR_HOTSPOT_START_FAILED),
+            Triple(CarHotspotTethering.Result.PERMISSION_REQUIRED, WirelessStartupFailure.HOTSPOT_CONFIGURATION, null),
+        )) {
+            Tethering.result = result
+            val failure = hotspotStartFailure()
+            assertEquals(reason, failure.reason)
+            assertEquals("${result.diagnostic}. Open the car hotspot settings and connect again.", failure.message)
+            assertEquals(cause, failure.knownCause)
+        }
+    }
+
+    @Implements(className = "com.shilapi.xcertplay.network.CarHotspotTethering", isInAndroidSdk = false)
+    class Tethering {
+        @Implementation fun enable(context: Context, isCancelled: () -> Boolean, timeoutMillis: Long,
+            log: (String) -> Unit): CarHotspotTethering.Result = result
+
+        companion object {
+            @Volatile var result = CarHotspotTethering.Result.READY
+        }
     }
 
     @Test fun theIphoneChoiceSaysWhyNoIphoneWasPicked() {

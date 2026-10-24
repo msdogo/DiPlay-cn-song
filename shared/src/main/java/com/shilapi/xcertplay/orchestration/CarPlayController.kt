@@ -2468,7 +2468,14 @@ class CarPlayController(
                     if (result == com.shilapi.xcertplay.network.CarHotspotTethering.Result.TIMED_OUT ||
                         result == com.shilapi.xcertplay.network.CarHotspotTethering.Result.FAILED)
                         WirelessStartupFailure.HOTSPOT_NOT_READY else WirelessStartupFailure.HOTSPOT_CONFIGURATION,
-                    "${result.diagnostic}. Open the car hotspot settings and connect again.")
+                    "${result.diagnostic}. Open the car hotspot settings and connect again.",
+                    when (result) {
+                        com.shilapi.xcertplay.network.CarHotspotTethering.Result.TIMED_OUT ->
+                            ConnectionFailureCause.CAR_HOTSPOT_START_TIMED_OUT
+                        com.shilapi.xcertplay.network.CarHotspotTethering.Result.FAILED ->
+                            ConnectionFailureCause.CAR_HOTSPOT_START_FAILED
+                        else -> null
+                    })
             }
         }
         var pastOffReport = false
@@ -2476,7 +2483,8 @@ class CarPlayController(
             val state = com.shilapi.xcertplay.network.CarHotspotStatus.isEnabled(appContext)
             if (com.shilapi.xcertplay.network.CarHotspotSettings.reportedOff(appContext, state)) {
                 throw WirelessStartupException(WirelessStartupFailure.HOTSPOT_CONFIGURATION,
-                    "The car hotspot is off. Turn it on in the car settings and connect again.")
+                    "The car hotspot is off. Turn it on in the car settings and connect again.",
+                    ConnectionFailureCause.CAR_HOTSPOT_OFF)
             }
             if (state == false) debugLog("car hotspot: Android reports it off; connecting anyway, as the driver chose")
             pastOffReport = state == false
@@ -3045,7 +3053,9 @@ class CarPlayController(
             onStatus(CarPlayStatus.Failed(error.message ?: error.javaClass.simpleName,
                 causes.any { it is com.shilapi.xcertplay.network.P2pResetRequiredException },
                 causes.filterIsInstance<WirelessStartupException>().firstOrNull()?.reason,
-                causes.filterIsInstance<ConnectionFailureException>().firstOrNull()?.reason),
+                causes.firstNotNullOfOrNull {
+                    (it as? ConnectionFailureException)?.reason ?: (it as? WirelessStartupException)?.knownCause
+                }),
                 if (wireless) wirelessGeneration.get() else null)
         }
     }

@@ -5425,7 +5425,7 @@ class CarPlayHostActivity : ComponentActivity() {
         updateHotspotStatus(status)
         val description = status.describe()
         val englishDescription = status.describe(englishResources)
-        val knownCause = (status as? CarPlayStatus.Failed)?.takeIf { it.startupFailure == null }?.knownCause
+        val knownCause = (status as? CarPlayStatus.Failed)?.knownCause
         // Once the retries stopped, a later failure of the same attempt, such as its cleanup, keeps the line saying so.
         if (!startupRetryStopped || status !is CarPlayStatus.Failed) {
             if (knownCause != null) setConnectionStage(ConnectionFailureGuidance.stage(knownCause))
@@ -5444,7 +5444,7 @@ class CarPlayHostActivity : ComponentActivity() {
                     if (startupFailureGeneration == controllerGeneration) return@report
                     startupFailureGeneration = controllerGeneration
                 }
-                reconnectAfterLoss(description, status.startupFailure, englishDescription)
+                reconnectAfterLoss(description, status.startupFailure, englishDescription, status.knownCause)
             }
             else -> Unit
         }
@@ -5972,6 +5972,7 @@ class CarPlayHostActivity : ComponentActivity() {
         reason: String,
         startupFailure: WirelessStartupFailure? = null,
         englishReason: String = reason,
+        knownCause: ConnectionFailureCause? = null,
     ) {
         if (!CarPlayBackgroundSession.isOwner(this)) return
         // Also when a retry is already pending and this loss is dropped: that retry must not skip.
@@ -5984,7 +5985,10 @@ class CarPlayHostActivity : ComponentActivity() {
         if (startupFailure != null && startupDelay == null) {
             startupRetryStopped = true
             startupRetryButton?.visibility = View.VISIBLE
-            if (startupFailure == WirelessStartupFailure.HOTSPOT_CONFIGURATION) {
+            if (knownCause != null) {
+                setConnectionStage("${getString(ConnectionFailureGuidance.stage(knownCause))}\n" +
+                    getString(R.string.wireless_startup_retries_exhausted))
+            } else if (startupFailure == WirelessStartupFailure.HOTSPOT_CONFIGURATION) {
                 // Its cause is in English, for the report; the help line below says what to check.
                 setConnectionStage("${getString(R.string.hotspot_network_not_ready)}\n" +
                     getString(R.string.wireless_startup_retries_exhausted))
