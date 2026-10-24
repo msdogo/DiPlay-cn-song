@@ -1348,14 +1348,24 @@ open class CarPlayHostActivity : ComponentActivity() {
         else -> false
     }
 
+    private fun clusterOutputReady(): Boolean = activeAirPlaySession?.hasRenderedMainFrame == true &&
+        !isDestroyed && !handshakeResetInProgress && !shuttingDown.get()
+
     private fun ensureClusterPresentation() {
         if (!AirPlayPersistence.loadClusterMapEnabled(this)) {
             clusterLaunchGate.reset()
             dismissClusterPresentation()
             return
         }
+        // 仪表流参数已在握手前准备；实际窗口和 ADB 投屏等中控首帧后再启动。
+        if (!clusterOutputReady()) {
+            clusterLaunchGate.reset()
+            mainHandler.removeCallbacks(clusterLaunchTick)
+            return
+        }
         // Handed back after CarPlay left; the next cluster stream takes the cluster again.
         if (clusterReleasedWhileIdle) return
+        clusterSurface?.let { sink?.setSurface(SCREEN_TYPE_ALT, it) }
         if (AdbClusterRouter.enabled(this)) {
             ClusterActivityOutput.bind(this, taskId) { onClusterSurface(it) }
             ClusterActivityOutput.setStreamActive(SCREEN_TYPE_ALT in activeScreenStreamTypes)
@@ -1404,13 +1414,11 @@ open class CarPlayHostActivity : ComponentActivity() {
     // screen, and the tap that brought focus back restarted CarPlay at the larger size.
     private val clusterLaunchGate = ClusterLaunchGate()
     private val clusterLaunchTick = Runnable { onClusterLaunchTick() }
-    private var carPlayStartHeldForCluster = false
 
     private fun launchClusterActivity() {
         runCatching { ClusterActivityOutput.ensure(this) }.onFailure {
             appendLog("Cluster activity: launch failed ${it.javaClass.simpleName}: ${it.message}")
         }
-        scheduleClusterLaunchTick()
     }
 
     private fun scheduleClusterLaunchTick() {
@@ -1420,17 +1428,17 @@ open class CarPlayHostActivity : ComponentActivity() {
 
     private fun onClusterLaunchTick() {
         mainHandler.removeCallbacks(clusterLaunchTick)
-        if (isDestroyed) return
+        if (isDestroyed || !clusterOutputReady() || !AirPlayPersistence.loadClusterMapEnabled(this)) {
+            clusterLaunchGate.reset()
+            return
+        }
         val now = SystemClock.uptimeMillis()
         if (clusterLaunchGate.due(now, hasWindowFocus(), isActivityStarted)) {
             appendLog("Cluster activity: launching after the main window " +
                 if (hasWindowFocus()) "took focus" else if (isActivityStarted) "waited for focus" else "left the screen")
             launchClusterActivity()
-        } else if (clusterLaunchGate.holdsCarPlayStart(now, ClusterActivityOutput.routeSettling())) {
+        } else if (clusterLaunchGate.awaitingFocus) {
             scheduleClusterLaunchTick()
-        } else if (carPlayStartHeldForCluster) {
-            carPlayStartHeldForCluster = false
-            maybeStartCarPlay()
         }
     }
 
@@ -1533,7 +1541,7 @@ open class CarPlayHostActivity : ComponentActivity() {
                 !adbClusterConfigured && controller != null) {
                 ClusterActivityOutput.setStreamActive(false)
                 reconnectAfterLoss("DiLink 4 cluster confirmed; requesting its native stream")
-            } else sink?.setSurface(SCREEN_TYPE_ALT, surface)
+            } else if (clusterOutputReady()) sink?.setSurface(SCREEN_TYPE_ALT, surface)
         }
         updateClusterMapShown()
     }
@@ -1564,7 +1572,8 @@ open class CarPlayHostActivity : ComponentActivity() {
         clusterStreamOnDisplay = false
         requestedSmallWindowForStream = null
         if (!AirPlayPersistence.loadClusterMapEnabled(this)) return null
-        if (AdbClusterRouter.enabled(this) && ClusterActivityOutput.hasConfirmedRoute()) {
+        // 已选择的 ADB 路由使用固定尺寸，无需启动仪表 Activity 才能准备流参数。
+        if (AdbClusterRouter.enabled(this)) {
             adbClusterConfigured = true
             clusterStreamOnDisplay = true
             return DiLink4ClusterDisplay.streamConfig(AirPlayPersistence.loadClusterContent(this),
@@ -1576,18 +1585,18 @@ open class CarPlayHostActivity : ComponentActivity() {
             }
         }
         val theme = effectiveClusterTheme()
+        if (DiLink51ClusterLayout.supported()) {
+            clusterStreamOnDisplay = true
+            return DiLink51ClusterLayout.streamConfig().also {
+                MapMirrors.streamAspect = it.widthPixels.toDouble() / it.heightPixels
+                appendLog("Cluster map: fixed 1920x720 stream; layout=$theme")
+            }
+        }
         val display = ClusterMapPresentation.findDisplay(this, theme)
         if (display != null) {
             val size = ClusterMapPresentation.sizeOf(display)
             if (size.x > 0 && size.y > 0) {
                 clusterStreamOnDisplay = true
-                if (DiLink51ClusterLayout.supported()) {
-                    val plan = DiLink51ClusterLayout.plan(size.x, size.y, theme) ?: return null
-                    return DiLink51ClusterLayout.streamConfig().also {
-                        MapMirrors.streamAspect = it.widthPixels.toDouble() / it.heightPixels
-                        appendLog("Cluster map: fixed 1920x720 stream; layout=$theme viewport=$plan")
-                    }
-                }
                 if (GeelyClusterDisplay.supported() && GeelyClusterDisplay.matches(display, size.x, size.y)) {
                     // Geely's cluster panel is the stream: no scale presets, the safe area carries the readouts.
                     return GeelyClusterDisplay.streamConfig(
@@ -5342,6 +5351,7 @@ open class CarPlayHostActivity : ComponentActivity() {
                         return@runOnUiThread
                     }
                     activeAirPlaySession = session
+                    if (!session.hasRenderedMainFrame) clusterSurface?.let { sink?.clearSurface(SCREEN_TYPE_ALT, it) }
                     val pending = pendingIphoneCornerMask
                     if (pending?.first === session) {
                         installIphoneCornerMask(session, pending.second.first, pending.second.second)
@@ -5354,6 +5364,7 @@ open class CarPlayHostActivity : ComponentActivity() {
                     reconnectAttempts = 0
                     logThemeState(ThemeModeDiagnostics.Source.SESSION_ACTIVE, resources.configuration)
                     syncAirPlayDarkMode(ThemeModeDiagnostics.Source.SESSION_ACTIVE)
+                    ensureClusterPresentation()
                     applyClusterTurnOverlay()
                     if (AirPlayPersistence.loadClusterSmallWindowMode(this@CarPlayHostActivity) == CLUSTER_SMALL_WINDOW_AUTO &&
                         requestedSmallWindowForStream != null &&
@@ -5368,7 +5379,10 @@ open class CarPlayHostActivity : ComponentActivity() {
             override fun onVideoFrameRendered(session: AirPlaySession) {
                 runOnUiThread {
                     if (controllerGeneration != restartGeneration || activeAirPlaySession !== session || shuttingDown.get()) return@runOnUiThread
-                    if (!startupRetryBudget.firstFrame(session, android.os.SystemClock.elapsedRealtime())) return@runOnUiThread
+                    val firstFrame = startupRetryBudget.firstFrame(session, android.os.SystemClock.elapsedRealtime())
+                    if (firstFrame) appendLog("Main video first frame rendered; cluster output may start")
+                    ensureClusterPresentation()
+                    if (!firstFrame) return@runOnUiThread
                     mainHandler.postDelayed({
                         if (controllerGeneration == restartGeneration && activeAirPlaySession === session &&
                             !shuttingDown.get() && CarPlayBackgroundSession.isOwner(this@CarPlayHostActivity) &&
@@ -5390,6 +5404,7 @@ open class CarPlayHostActivity : ComponentActivity() {
                     if (controllerGeneration != restartGeneration || startupRetryStopped) return@runOnUiThread
                     startupRetryBudget.disconnected()
                     activeAirPlaySession = null
+                    clusterSurface?.let { sink?.clearSurface(SCREEN_TYPE_ALT, it) }
                     clearIphoneCornerMask()
                     CarPlayBackgroundSession.active = false
                     callPopupSessionReady = false
@@ -5559,7 +5574,8 @@ open class CarPlayHostActivity : ComponentActivity() {
         // callback, so it takes the live session from the controller: day/night, the Siri key and the
         // wheel keys reach the iPhone through it. Restore iOS's captured mask when the controller still
         // owns that live session.
-        snapshot.controller.activeAirPlaySession()?.let { activeAirPlaySession = it }
+        activeAirPlaySession = snapshot.controller.activeAirPlaySession()
+        ensureClusterPresentation()
         if (blackCornerRadiusDp == CarPlayBlackCornerOverlay.IPHONE_MASK) {
             snapshot.controller.activeIphoneCornerMask()?.let { (session, png, width) ->
                 activeAirPlaySession = session
@@ -5655,7 +5671,6 @@ open class CarPlayHostActivity : ComponentActivity() {
         )
         sink = renderer
         currentSurface?.let(::attachSurface)
-        clusterSurface?.let { renderer.setSurface(SCREEN_TYPE_ALT, it) }
         MapMirrors.reapply()
         val media = createMediaEngine(renderer)
         val pairings = AirPlayPersistence.loadPairings(this) { id, key ->
@@ -6008,12 +6023,6 @@ open class CarPlayHostActivity : ComponentActivity() {
             pendingDisplaySize != null ||
             controller != null
         ) {
-            return
-        }
-        // The first session must already carry the cluster stream; a later route reconnects CarPlay.
-        if (clusterLaunchGate.holdsCarPlayStart(SystemClock.uptimeMillis(), ClusterActivityOutput.routeSettling())) {
-            carPlayStartHeldForCluster = true
-            scheduleClusterLaunchTick()
             return
         }
         startCarPlay(size)
@@ -6490,7 +6499,7 @@ open class CarPlayHostActivity : ComponentActivity() {
     private fun attachSurface(surface: Surface) {
         sink?.setSurface(SCREEN_TYPE_MAIN, surface)
         if (AirPlayPersistence.loadClusterMapEnabled(this)) {
-            clusterSurface?.let { sink?.setSurface(SCREEN_TYPE_ALT, it) }
+            if (clusterOutputReady()) clusterSurface?.let { sink?.setSurface(SCREEN_TYPE_ALT, it) }
         } else {
             sink?.setSurface(SCREEN_TYPE_ALT, surface)
         }
