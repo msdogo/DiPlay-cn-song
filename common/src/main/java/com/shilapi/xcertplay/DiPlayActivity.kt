@@ -208,6 +208,8 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
     private var homeCardTitle: TextView? = null
     private var homeConnectionHint: TextView? = null
     private var homeLastProblem: TextView? = null
+    private var wheelKeyStatus: TextView? = null
+    private var wheelKeyActions: List<android.view.View> = emptyList()
     private var connectButton: Button? = null
     private var disconnectButton: Button? = null
     private var lastRunning: Boolean? = null
@@ -715,6 +717,8 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
         settingsSearchBox = null
         if (page != "settings") clearSettingsSearchState()
         status = null; homeLastProblem = null; connectButton = null; disconnectButton = null; lastRunning = null; carButtonCard = null
+        wheelKeyStatus = null
+        wheelKeyActions = emptyList()
         reconnectBar = null
         readinessCard = null
         exportButton = null
@@ -4688,13 +4692,13 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
 
     private fun wheelKeyServiceControls(card: LinearLayout) {
         val connected = WheelKeyService.connected()
-        card.addView(label(getString(when {
-            connected -> R.string.wheel_keys_service_on
-            WheelKeyService.enabledInSettings(this) -> R.string.wheel_keys_service_starting
-            else -> R.string.wheel_keys_service_off
-        }), 14, if (connected) MUTED else WARNING))
+        // Kept so [refreshStatus] can move the row on as soon as Android binds the service: the
+        // head unit binds it a moment after the settings write, and a page that is still open
+        // would otherwise keep saying "starting…" for good (#606).
+        wheelKeyStatus = label(getString(wheelKeyServiceState()), 14, if (connected) MUTED else WARNING)
+        card.addView(wheelKeyStatus)
         if (!connected) {
-            card.addView(actionButton(getString(R.string.wheel_keys_enable_adb), false) {
+            val enable = actionButton(getString(R.string.wheel_keys_enable_adb), false) {
                 Thread({
                     val access = WheelKeyService.enableOverAdb(this)
                     runOnUiThread {
@@ -4704,10 +4708,36 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
                         render()
                     }
                 }, "diplay-wheel-keys-enable").start()
-            }, matchButton(10, 56))
-            card.addView(button(getString(R.string.wheel_keys_open_settings), false) {
+            }
+            card.addView(enable, matchButton(10, 56))
+            val open = button(getString(R.string.wheel_keys_open_settings), false) {
                 if (!UsbAutoConfirmService.openSettings(this)) toast(getString(R.string.wheel_keys_no_settings))
-            }, matchButton(10, 56))
+            }
+            card.addView(open, matchButton(10, 56))
+            wheelKeyActions = listOf(enable, open)
+        }
+    }
+
+    private fun wheelKeyServiceState(): Int = when {
+        WheelKeyService.connected() -> R.string.wheel_keys_service_on
+        WheelKeyService.enabledInSettings(this) -> R.string.wheel_keys_service_starting
+        else -> R.string.wheel_keys_service_off
+    }
+
+    /** The card is rebuilt only on navigation, so the row follows a late bind here, once a second. */
+    private fun refreshWheelKeyStatus() {
+        val view = wheelKeyStatus ?: return
+        val connected = WheelKeyService.connected()
+        val state = wheelKeyServiceState()
+        if (view.text.toString() != getString(state)) {
+            // The report keeps this too: a driver who never reopened the page still records the moment the
+            // row would have moved, which tells a late bind from one that never happened (#606).
+            WheelKeyLog.note("wheel key row: ${getString(state)} bound=$connected")
+            view.setTextColor(if (connected) MUTED else WARNING)
+            view.text = getString(state)
+            // The buttons belong to the unbound state only.
+            val visibility = if (connected) android.view.View.GONE else android.view.View.VISIBLE
+            for (action in wheelKeyActions) action.visibility = visibility
         }
     }
 
@@ -6230,6 +6260,7 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
         connectButton?.isEnabled = setupError == null
         refreshReconnectBar()
         refreshReadiness()
+        refreshWheelKeyStatus()
     }
     private fun authorizeClusterRouting() {
         val app = applicationContext
@@ -6389,6 +6420,7 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
             "bydHeadUnit=${runCatching { CarHotspotSetup.isBydHeadUnit(appContext) }.getOrNull()} " +
             "hotspotOn=${runCatching { com.shilapi.xcertplay.network.CarHotspotStatus.isEnabled(appContext) }.getOrNull()}")
         appendLine(WheelKeyService.report(appContext))
+        WheelKeyJournal.report(appContext).forEach { appendLine(it) }
         WheelKeyLog.report(WheelKeyService.connected()).forEach { appendLine(it) }
         appendLine()
         appendLine(UpdateAvailability.report(appContext, System.currentTimeMillis()))

@@ -269,6 +269,34 @@ class WheelSiriWindowTest {
         assertTrue(texts.any { it == settings.getString(R.string.wheel_joystick) })
     }
 
+    @Test fun theOpenSettingsPageFollowsTheServiceBindingWithoutNavigation() {
+        // DiLink 3.0 writes the list, then binds the service late; a page that is still open kept
+        // saying "allowed, starting…" because only navigation rebuilt the card (#606).
+        settings.setTheme(android.R.style.Theme_Material_NoActionBar)
+        WheelZoomSettings.setSiriKey(settings, true)
+        val ours = android.content.ComponentName(settings, WheelKeyService::class.java).flattenToString()
+        android.provider.Settings.Secure.putString(settings.contentResolver,
+            android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, "car.package/.Accessibility:$ours")
+        val controls = wheelControls()
+        fun labels(): List<String> = views(controls).filterIsInstance<TextView>().map { it.text.toString() }.toList()
+        fun actions(): List<View> = views(controls).filterIsInstance<android.widget.Button>()
+            .filter { it.text.toString() in setOf(settings.getString(R.string.wheel_keys_enable_adb),
+                settings.getString(R.string.wheel_keys_open_settings)) }.toList()
+        assertEquals(1, labels().count { it == settings.getString(R.string.wheel_keys_service_starting) })
+        assertEquals(2, actions().size)
+
+        val service = boundService()
+        try {
+            settings.javaClass.getDeclaredMethod("refreshStatus").apply { isAccessible = true }.invoke(settings)
+            assertEquals(0, labels().count { it == settings.getString(R.string.wheel_keys_service_starting) })
+            assertEquals(1, labels().count { it == settings.getString(R.string.wheel_keys_service_on) })
+            // The buttons only make sense while nothing is bound.
+            assertTrue(actions().all { it.visibility == View.GONE })
+        } finally {
+            service.onDestroy()
+        }
+    }
+
     @Test fun doublePressOptionsAppearDirectlyUnderTheSiriSetting() {
         settings.setTheme(android.R.style.Theme_Material_NoActionBar)
         WheelZoomSettings.setSiriKey(settings, true)

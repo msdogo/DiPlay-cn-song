@@ -27,6 +27,7 @@ class WheelKeyServiceReportTest {
 
     @Before fun setUp() {
         WheelKeyLog.reset()
+        WheelKeyJournal.reset(service_context())
         service = Robolectric.buildService(WheelKeyService::class.java).create().get()
         service.getSharedPreferences("diplay_navigation_wheel", Context.MODE_PRIVATE).edit().clear().commit()
         service.getSharedPreferences("diplay_wheel_map_zoom", Context.MODE_PRIVATE).edit().clear().commit()
@@ -39,7 +40,10 @@ class WheelKeyServiceReportTest {
         service.onDestroy()
         CarPlayBackgroundSession.clear()
         WheelKeyLog.reset()
+        WheelKeyJournal.reset(service_context())
     }
+
+    private fun service_context(): Context = org.robolectric.RuntimeEnvironment.getApplication()
 
     private fun send(code: Int, action: Int, repeat: Int = 0, downTime: Long = time): Boolean = service.javaClass
         .getDeclaredMethod("onKeyEvent", KeyEvent::class.java).apply { isAccessible = true }
@@ -178,9 +182,27 @@ class WheelKeyServiceReportTest {
         val lines = text.lines()
         val serviceLine = lines.indexOfFirst { it.startsWith("Wheel key service: ") }
         assertTrue(text, serviceLine >= 0)
-        assertTrue(lines[serviceLine + 1], lines[serviceLine + 1].startsWith("Wheel keys since DiPlay started: presses=1 "))
-        assertTrue(lines[serviceLine + 2], lines[serviceLine + 2].endsWith("  wheel key service connected"))
-        assertTrue(lines[serviceLine + 3], lines[serviceLine + 3].endsWith("  key 137/0 device 7 left to the head unit"))
-        assertEquals("", lines[serviceLine + 4])
+        // The journal follows the summary line, however many entries this run recorded.
+        assertTrue(text, lines[serviceLine + 1].startsWith("Wheel key service journal: "))
+        val journal = lines.indexOfFirst { it.startsWith("Wheel key journal: ") }
+        assertTrue(text, journal > serviceLine)
+        val keysLine = lines.indexOfFirst { it.startsWith("Wheel keys since DiPlay started: presses=1 ") }
+        assertTrue(text, keysLine > journal)
+        assertTrue(text, lines.drop(keysLine).any { it.endsWith("  key 137/0 device 7 left to the head unit") })
+    }
+
+    @Test fun theJournalShowsWhatHappenedBeforeThisAppRun() {
+        // A head unit without logcat has only this: the repair from the run that failed has to survive.
+        WheelKeyJournal.reset(service.applicationContext)
+        WheelKeyJournal.append(service, "app opened bound=false listed=true wanted=false", nowMillis = 0)
+        WheelKeyJournal.append(service, "repair stopped: the service list could not be written", nowMillis = 46_000)
+        WheelKeyJournal.resetProcessFlagForTest()
+        val activity = Robolectric.buildActivity(DiPlayActivity::class.java).get()
+        val text = activity.javaClass.getDeclaredMethod("diagnosticReportText", Context::class.java)
+            .apply { isAccessible = true }.invoke(activity, service.applicationContext) as String
+        val journal = text.lines().filter { it.startsWith("Wheel key journal: ") }
+        assertEquals(2, journal.size)
+        assertTrue(journal[0], journal[0].endsWith("app opened bound=false listed=true wanted=false"))
+        assertTrue(journal[1], journal[1].endsWith("repair stopped: the service list could not be written"))
     }
 }

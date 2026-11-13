@@ -114,6 +114,7 @@ class WheelKeyService : AccessibilityService() {
         handler.removeCallbacks(pollEligibility)
         handler.postDelayed(pollEligibility, ELIGIBILITY_POLL_MILLIS)
         WheelKeyLog.bound()
+        WheelKeyJournal.append(this, "service connected")
         note("wheel key service connected")
     }
 
@@ -121,6 +122,7 @@ class WheelKeyService : AccessibilityService() {
         if (running === this) {
             running = null
             lastObservedDoubleSiriEvent = null
+            WheelKeyJournal.append(this, "service unbound")
             note("wheel key service unbound")
         }
         clearLearning()
@@ -137,6 +139,7 @@ class WheelKeyService : AccessibilityService() {
         if (running === this) {
             running = null
             lastObservedDoubleSiriEvent = null
+            WheelKeyJournal.append(this, "service destroyed")
             note("wheel key service destroyed")
         }
         clearLearning()
@@ -534,18 +537,34 @@ class WheelKeyService : AccessibilityService() {
          */
         fun enableOverAdb(context: Context, mayAsk: Boolean = true): LocalAdb.Access = LocalAdb(AdbKeys.load(context)).use { adb ->
             val access = adb.connect(mayAsk)
-            if (access != LocalAdb.Access.READY) return@use access
+            if (access != LocalAdb.Access.READY) {
+                // The driver's own press is worth a line; the background repair logs its attempts already.
+                if (mayAsk) {
+                    WheelKeyJournal.append(context, "the driver pressed enable: adb=$access")
+                    note("wheel key service enable over adb: adb=$access")
+                }
+                return@use access
+            }
             if (!mayAsk && !needsRestore(context)) return@use if (connected()) access else LocalAdb.Access.UNREACHABLE
             val allowed = applyServiceSettings(context, adb::shell) {
-                mayAsk || wanted(context)
+                // The list can already name the service while nothing binds, so the repair still runs.
+                mayAsk || wanted(context) || enabledInSettings(context)
             }
             if (allowed && mayAsk) NavigationWheelSettings.recordAuthorization(context)
             if (allowed) note("wheel key service allowed over adb")
+            // The list reads "allowed" the moment it is written, but Android binds the service a
+            // moment later, and on DiLink 3.0 it can leave it under "Crashed services" instead
+            // (#606) while the settings keep naming it. The interactive enable then starts the same
+            // retrying repair the front-of-app check uses, so a first-time driver is not left on
+            // "Allowed, starting…" until DiPlay is restarted.
+            if (allowed) WheelKeyJournal.append(context, "allowed over adb bound=${connected()}")
+            if (allowed && !connected()) restoreIfNeeded(context)
             if (allowed) access else LocalAdb.Access.UNREACHABLE
         }
 
         private const val GRANT_EXIT = "DIPLAY_WHEEL_EXIT"
         private const val CRASH_RESET_PAUSE_SECONDS = 1
+        private const val CRASH_RESET_LONG_PAUSE_SECONDS = 3
         private fun checkedShell(command: String, shell: (String) -> String?): String? {
             val lines = shell("( $command ); result=\$?; printf '\\n$GRANT_EXIT:%s\\n' \"\$result\"")
                 ?.trimEnd()?.lines() ?: return null
@@ -561,9 +580,25 @@ class WheelKeyService : AccessibilityService() {
 
         private fun applyServiceSettingsLocked(context: Context, shell: (String) -> String?,
             shouldContinue: () -> Boolean): Boolean {
-            if (!shouldContinue()) return false
-            val current = checkedShell("settings get secure enabled_accessibility_services", shell) ?: return false
-            val lists = allowedServices(current, component(context).flattenToString()) ?: return false
+            // Every step that decides the outcome is kept for the diagnostic report: a driver who still
+            // reads "Allowed, starting…" can then say which step the car refused (#606).
+            val trail = mutableListOf<String>()
+            fun stop(reason: String): Boolean {
+                trail += "stopped=$reason"
+                recordRepair(context, trail.joinToString(" "))
+                WheelKeyJournal.append(context, "repair stopped: $reason")
+                note("wheel key service repair $reason")
+                return false
+            }
+            if (!shouldContinue()) return stop("cancelled")
+            val current = checkedShell("settings get secure enabled_accessibility_services", shell)
+                ?: return stop("the service list could not be read")
+            val lists = allowedServices(current, component(context).flattenToString())
+                ?: return stop("the service list holds a value DiPlay will not write")
+            trail += "listed=${lists.first != null} boundAtStart=${connected()}"
+            WheelKeyJournal.append(context, "repair started listed=${lists.first != null} " +
+                "bound=${connected()} wanted=${wanted(context)} accessibility=${Settings.Secure.getInt(
+                    context.contentResolver, Settings.Secure.ACCESSIBILITY_ENABLED, -1)}")
             // Binding may finish after the read. Check again immediately before a destructive rebind,
             // after the continuation callback, without blocking the service's main-thread callback.
             // Android marks a service whose process died as crashed and does not bind it again until
@@ -571,25 +606,149 @@ class WheelKeyService : AccessibilityService() {
             // the full list both times, and the keys stayed on "Allowed, starting…" with the service
             // under "Crashed services" in dumpsys accessibility (#606), so the list is left without
             // it for a moment first.
+            fun writeList(services: String): Boolean =
+                checkedShell("settings put secure enabled_accessibility_services '$services'", shell) != null
+            fun writeEnabled(): Boolean =
+                checkedShell("settings put secure accessibility_enabled 1", shell) != null
+
             lists.first?.let {
-                if (!shouldContinue()) return false
-                if (!connected() && checkedShell(
-                        "settings put secure enabled_accessibility_services '$it' && sleep $CRASH_RESET_PAUSE_SECONDS",
+                if (!shouldContinue()) return stop("cancelled")
+                if (!connected()) {
+                    if (checkedShell(
+                            "settings put secure enabled_accessibility_services '$it' && sleep $CRASH_RESET_PAUSE_SECONDS",
+                            shell,
+                        ) == null
+                    ) return stop("the service list could not be left without our service")
+                    trail += "removedFor=$CRASH_RESET_PAUSE_SECONDS" + "s"
+                }
+            }
+            if (!shouldContinue() || !writeList(lists.second)) return stop("the service list could not be written")
+            if (!shouldContinue() || !writeEnabled()) return stop("accessibility could not be turned on")
+            if (!allowedNow(context)) return stop("the car does not list the service after the write")
+            // A car that keeps the service under "Crashed services" never binds it, however often the list
+            // names it: only a list without the service clears the mark (#606). Ask the car whether it kept
+            // the mark, and when it did take the service out again for longer.
+            val dump = if (shouldContinue() && !connected() && lists.first != null)
+                shell("dumpsys accessibility") else null
+            val markNow = crashedMark(dump, component(context).flattenToString())
+            recordCrashList(context, dump)
+            trail += "crashedAfterReset=${markNow ?: "unreadable"}"
+            if (markNow == true) {
+                trail += "stillCrashedAfterFirstReset"
+                note("wheel key service still under Crashed services; longer reset")
+                // The pause is its own command: the adb client gives a shell read five seconds, and a
+                // three-second sleep behind a settings write leaves too little of it.
+                if (checkedShell(
+                        "settings put secure enabled_accessibility_services '${lists.first}'",
                         shell,
                     ) == null
-                ) return false
+                ) return stop("the service list could not be left without our service again")
+                if (!shouldContinue()) return stop("cancelled")
+                checkedShell("sleep $CRASH_RESET_LONG_PAUSE_SECONDS", shell)
+                    ?: return stop("the longer pause could not be kept")
+                if (!shouldContinue() || !writeList(lists.second)) return stop("the service list could not be written again")
+                if (!shouldContinue() || !writeEnabled()) return stop("accessibility could not be turned on again")
+                if (!allowedNow(context)) return stop("the car does not list the service after the longer reset")
+                if (!connected() &&
+                    crashedMark(shell("dumpsys accessibility"), component(context).flattenToString()) == true
+                ) {
+                    trail += "stillCrashedAfterLongerReset"
+                    WheelKeyJournal.append(context, "still crashed after the longer reset: the car must clear it")
+                    note("wheel key service kept under Crashed services; the car must restart it")
+                }
             }
-            for (command in listOf(
-                "settings put secure enabled_accessibility_services '${lists.second}'",
-                "settings put secure accessibility_enabled 1",
-            )) {
-                if (!shouldContinue() || checkedShell(command, shell) == null) return false
-            }
-            return enabledInSettings(context) &&
-                Settings.Secure.getInt(context.contentResolver, Settings.Secure.ACCESSIBILITY_ENABLED, 0) == 1
+            trail += "written bound=${connected()}"
+            val trailText = trail.joinToString(" ")
+            recordRepair(context, trailText)
+            WheelKeyJournal.append(context, "repair $trailText")
+            // One line for the report: the repair ran to the end, and what the car says about the service.
+            note("wheel key service repair $trailText")
+            return true
         }
 
-        internal fun needsRestore(context: Context): Boolean = !connected() && wanted(context)
+
+        private const val REPAIR_PREFS = "wheel_key_repair"
+
+        /** The last repair, for the diagnostic report: which steps ran and where one stopped. */
+        private fun recordRepair(context: Context, trail: String) {
+            context.getSharedPreferences(REPAIR_PREFS, Context.MODE_PRIVATE).edit()
+                .putLong("at", System.currentTimeMillis())
+                .putString("trail", trail)
+                .apply()
+        }
+
+        /**
+         * What the car's own accessibility dump says about DiPlay's service, for the report. The maintainer's
+         * answer to "still starting…" is this section, and a driver can only send it if DiPlay asked for it
+         * (#606). Only the two sections that name services are kept, so no window or app content is stored.
+         */
+        private fun recordCrashList(context: Context, dump: String?) {
+            val enabled = section(dump, "Enabled services:")
+            val crashed = section(dump, "Crashed services:")
+            context.getSharedPreferences(REPAIR_PREFS, Context.MODE_PRIVATE).edit()
+                .putLong("dumpAt", System.currentTimeMillis())
+                .putString("enabled", enabled)
+                .putString("crashed", crashed)
+                .apply()
+        }
+
+        /** The lines under [header], or null when the car prints no such section. */
+        private fun section(dump: String?, header: String): String? {
+            val start = dump?.indexOf(header)?.takeIf { it >= 0 } ?: return null
+            return dump.substring(start + header.length).lineSequence()
+                .dropWhile { it.isBlank() }
+                .takeWhile { it.isNotBlank() && !it.trimEnd().endsWith(":") }
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+                .take(8)
+                .joinToString(" ")
+                .take(400)
+        }
+
+        private fun crashListReport(context: Context): String {
+            val prefs = context.getSharedPreferences(REPAIR_PREFS, Context.MODE_PRIVATE)
+            val at = prefs.getLong("dumpAt", 0L)
+            if (at == 0L) return "none"
+            return "ageMs=${System.currentTimeMillis() - at} " +
+                "enabled=[${prefs.getString("enabled", null) ?: "section missing"}] " +
+                "crashed=[${prefs.getString("crashed", null) ?: "section missing"}]"
+        }
+
+        private fun repairReport(context: Context): String {
+            val prefs = context.getSharedPreferences(REPAIR_PREFS, Context.MODE_PRIVATE)
+            val at = prefs.getLong("at", 0L)
+            if (at == 0L) return "none"
+            return "ageMs=${System.currentTimeMillis() - at} ${prefs.getString("trail", null)}"
+        }
+
+        /** Whether the car still says "allowed" for the wheel key service. */
+        private fun allowedNow(context: Context): Boolean = enabledInSettings(context) &&
+            Settings.Secure.getInt(context.contentResolver, Settings.Secure.ACCESSIBILITY_ENABLED, 0) == 1
+
+        /**
+         * Whether `dumpsys accessibility` keeps the service under "Crashed services". Android does not bind a
+         * service in that state, and only a list without it clears the mark, so the repair asks the car
+         * instead of guessing (#606). Null when the dump failed or the car prints no such section, so an
+         * unreadable state never changes the repair.
+         */
+        internal fun crashedMark(dump: String?, component: String): Boolean? {
+            val start = dump?.indexOf("Crashed services:")?.takeIf { it >= 0 } ?: return null
+            val section = dump.substring(start + "Crashed services:".length).lineSequence()
+                .dropWhile { it.isBlank() }
+                .takeWhile { it.isNotBlank() && !it.trimEnd().endsWith(":") }
+                .joinToString("\n")
+            return section.contains(component)
+        }
+
+        /**
+         * A service the head unit lists but never bound needs the same repair as one a setting asks for.
+         * BYD force-stops DiPlay, Android marks the service crashed and keeps its name in the list, so the
+         * settings still read "allowed" while nothing binds (#606). Keyed on [wanted] alone, a driver who
+         * turned the service on through ADB without any key feature stayed on "Allowed, starting…" for
+         * good, because no setting ever asked for a restore.
+         */
+        internal fun needsRestore(context: Context): Boolean =
+            !connected() && (wanted(context) || enabledInSettings(context))
 
         /**
          * The call controls need the service too: outside the CarPlay screen the call key reaches DiPlay
@@ -610,6 +769,12 @@ class WheelKeyService : AccessibilityService() {
          */
         fun restoreIfNeeded(context: Context) {
             val app = context.applicationContext
+            // One line per app run: whether the service was already bound, so a report can tell "never
+            // bound after this start" from "bound, then stopped" (#606).
+            if (!WheelKeyJournal.startedInThisProcess()) {
+                WheelKeyJournal.append(app, "app opened bound=${connected()} " +
+                    "listed=${enabledInSettings(app)} wanted=${wanted(app)}")
+            }
             if (!needsRestore(app) || !restoring.compareAndSet(false, true)) return
             Thread({
                 try {
@@ -618,6 +783,8 @@ class WheelKeyService : AccessibilityService() {
                         restore = { enableOverAdb(app, mayAsk = false) },
                         sleep = Thread::sleep,
                     ) { attempt, access ->
+                        WheelKeyJournal.append(app, "restore attempt=$attempt adb=$access bound=${connected()} " +
+                            "elapsed=${if (attempt == 1) RESTORE_GRACE_MILLIS else (attempt - 1) * RESTORE_RETRY_MILLIS}ms")
                         Log.i(TAG, "wheel key service restore attempt=$attempt adb=$access bound=${connected()}")
                         // Without its number, a run of attempts that end the same way is one line of the report.
                         WheelKeyLog.note("wheel key service restore attempt adb=$access bound=${connected()}")
@@ -669,7 +836,8 @@ class WheelKeyService : AccessibilityService() {
                 "attempt=${prefs.getInt("attempt", 0)} adb=${prefs.getString("adb", null)} " +
                     "ageMs=${System.currentTimeMillis() - at}"
             return "Wheel key service: wanted=${wanted(context)} allowedInSettings=${enabledInSettings(context)} " +
-                "bound=${connected()} lastRestore=$last " +
+                "bound=${connected()} lastRestore=$last lastRepair=${repairReport(context)} " +
+                "carCrashList=${crashListReport(context)} " +
                 "siriDoublePress=${WheelZoomSettings.siriDoublePress(context)} " +
                 "siriDoubleIntervalMs=${WheelZoomSettings.siriDoublePressIntervalMillis(context)} " +
                 "siriTriggerDelayMs=${WheelZoomSettings.siriTriggerDelayMillis(context)}"
