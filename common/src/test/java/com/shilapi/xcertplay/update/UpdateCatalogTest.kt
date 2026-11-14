@@ -16,8 +16,8 @@ class UpdateCatalogTest {
             "tag_name": "v0.2.15-cn.1",
             "draft": true,
             "assets": [
-              {"name": "DiPlay-cn-v0.2.15-cn.1.apk", "browser_download_url": "${GITHUB}v0.2.15-cn.1/DiPlay-cn-v0.2.15-cn.1.apk"},
-              {"name": "DiPlay-cn-v0.2.15-cn.1.apk.sha256", "browser_download_url": "${GITHUB}v0.2.15-cn.1/DiPlay-cn-v0.2.15-cn.1.apk.sha256"}
+              {"name": "DiPlay-cn-song-v0.2.15-cn.1.apk", "browser_download_url": "${GITHUB}v0.2.15-cn.1/DiPlay-cn-song-v0.2.15-cn.1.apk"},
+              {"name": "DiPlay-cn-song-v0.2.15-cn.1.apk.sha256", "browser_download_url": "${GITHUB}v0.2.15-cn.1/DiPlay-cn-song-v0.2.15-cn.1.apk.sha256"}
             ]
           },
           {
@@ -25,8 +25,8 @@ class UpdateCatalogTest {
             "draft": false,
             "prerelease": true,
             "assets": [
-              {"name": "DiPlay-cn-v0.2.14-cn.2.apk", "browser_download_url": "${GITHUB}v0.2.14-cn.2/DiPlay-cn-v0.2.14-cn.2.apk"},
-              {"name": "DiPlay-cn-v0.2.14-cn.2.apk.sha256", "browser_download_url": "${GITHUB}v0.2.14-cn.2/DiPlay-cn-v0.2.14-cn.2.apk.sha256"}
+              {"name": "DiPlay-cn-song-v0.2.14-cn.2.apk", "browser_download_url": "${GITHUB}v0.2.14-cn.2/DiPlay-cn-song-v0.2.14-cn.2.apk"},
+              {"name": "DiPlay-cn-song-v0.2.14-cn.2.apk.sha256", "browser_download_url": "${GITHUB}v0.2.14-cn.2/DiPlay-cn-song-v0.2.14-cn.2.apk.sha256"}
             ]
           }
         ]
@@ -36,9 +36,9 @@ class UpdateCatalogTest {
     fun skipsDraftsAndReturnsTheFirstPublishedRelease() {
         val release = UpdateCatalog.parse(releaseJson)
         assertEquals("v0.2.14-cn.2", release?.tagName)
-        assertEquals("DiPlay-cn-v0.2.14-cn.2.apk", release?.apkName)
-        assertEquals("${GITHUB}v0.2.14-cn.2/DiPlay-cn-v0.2.14-cn.2.apk", release?.apkUrl)
-        assertEquals("${GITHUB}v0.2.14-cn.2/DiPlay-cn-v0.2.14-cn.2.apk.sha256", release?.checksumsUrl)
+        assertEquals("DiPlay-cn-song-v0.2.14-cn.2.apk", release?.apkName)
+        assertEquals("${GITHUB}v0.2.14-cn.2/DiPlay-cn-song-v0.2.14-cn.2.apk", release?.apkUrl)
+        assertEquals("${GITHUB}v0.2.14-cn.2/DiPlay-cn-song-v0.2.14-cn.2.apk.sha256", release?.checksumsUrl)
     }
 
     @Test
@@ -58,7 +58,7 @@ class UpdateCatalogTest {
         val json = """
             [
               {"tag_name": "v0.2.14-cn.2", "draft": false, "assets": [
-                {"name": "DiPlay-cn-v0.2.14-cn.2.apk", "browser_download_url": "${GITHUB}v0.2.14-cn.2/DiPlay-cn-v0.2.14-cn.2.apk"}
+                {"name": "DiPlay-cn-song-v0.2.14-cn.2.apk", "browser_download_url": "${GITHUB}v0.2.14-cn.2/DiPlay-cn-song-v0.2.14-cn.2.apk"}
               ]}
             ]
         """.trimIndent()
@@ -74,8 +74,8 @@ class UpdateCatalogTest {
     fun acceptsHistoricalFourComponentCnTags() {
         val tag = "v0.2.8.5-cn.1"
         val json = """{"tag_name":"$tag","assets":[
-            {"name":"DiPlay-cn-$tag.apk","browser_download_url":"$GITHUB$tag/DiPlay-cn-$tag.apk"},
-            {"name":"DiPlay-cn-$tag.apk.sha256","browser_download_url":"$GITHUB$tag/DiPlay-cn-$tag.apk.sha256"}
+            {"name":"DiPlay-cn-song-$tag.apk","browser_download_url":"$GITHUB$tag/DiPlay-cn-$tag.apk"},
+            {"name":"DiPlay-cn-song-$tag.apk.sha256","browser_download_url":"$GITHUB$tag/DiPlay-cn-$tag.apk.sha256"}
         ]}"""
         assertEquals(tag, UpdateCatalog.parse(json)?.tagName)
     }
@@ -84,39 +84,39 @@ class UpdateCatalogTest {
     fun skipsIncompleteReleaseAndNeverSelectsOfficialApk() {
         val json = """[
             {"tag_name":"v0.2.18-cn.1","assets":[
-                {"name":"DiPlay-cn-v0.2.18-cn.1.apk","browser_download_url":"${GITHUB}v0.2.18-cn.1/new.apk"}]},
+                {"name":"DiPlay-cn-song-v0.2.18-cn.1.apk","browser_download_url":"${GITHUB}v0.2.18-cn.1/new.apk"}]},
             {"tag_name":"v0.2.17-cn.3","assets":[
                 {"name":"DiPlay-0.2.17.apk","browser_download_url":"${GITHUB}v0.2.17-cn.3/official.apk"},
-                {"name":"DiPlay-cn-v0.2.17-cn.3.apk","browser_download_url":"${GITHUB}v0.2.17-cn.3/cn.apk"},
-                {"name":"DiPlay-cn-v0.2.17-cn.3.apk.sha256","browser_download_url":"${GITHUB}v0.2.17-cn.3/cn.sha256"}]}
+                {"name":"DiPlay-cn-song-v0.2.17-cn.3.apk","browser_download_url":"${GITHUB}v0.2.17-cn.3/cn.apk"},
+                {"name":"DiPlay-cn-song-v0.2.17-cn.3.apk.sha256","browser_download_url":"${GITHUB}v0.2.17-cn.3/cn.sha256"}]}
         ]"""
         assertEquals("${GITHUB}v0.2.17-cn.3/cn.apk", UpdateCatalog.parse(json)?.apkUrl)
     }
 
     private fun releaseWith(
         tag: String = "v0.2.22-cn.1",
-        apkName: String = "DiPlay-cn-v0.2.22-cn.1.apk",
+        apkName: String = "DiPlay-cn-song-v0.2.22-cn.1.apk",
         apkUrl: String,
-        checksumsUrl: String = "${GITHUB}v0.2.22-cn.1/DiPlay-cn-v0.2.22-cn.1.apk.sha256",
+        checksumsUrl: String = "${GITHUB}v0.2.22-cn.1/DiPlay-cn-song-v0.2.22-cn.1.apk.sha256",
     ) = """
         [{"tag_name": ${org.json.JSONObject.quote(tag)}, "draft": false, "assets": [
           {"name": ${org.json.JSONObject.quote(apkName)}, "browser_download_url": ${org.json.JSONObject.quote(apkUrl)}},
-          {"name": "DiPlay-cn-v0.2.22-cn.1.apk.sha256", "browser_download_url": ${org.json.JSONObject.quote(checksumsUrl)}}
+          {"name": "DiPlay-cn-song-v0.2.22-cn.1.apk.sha256", "browser_download_url": ${org.json.JSONObject.quote(checksumsUrl)}}
         ]}]
     """.trimIndent()
 
     @Test
     fun acceptsTheAssetsOfARealRelease() {
-        val release = UpdateCatalog.parse(releaseWith(apkUrl = "${GITHUB}v0.2.22-cn.1/DiPlay-cn-v0.2.22-cn.1.apk"))
-        assertEquals("DiPlay-cn-v0.2.22-cn.1.apk", release?.apkName)
+        val release = UpdateCatalog.parse(releaseWith(apkUrl = "${GITHUB}v0.2.22-cn.1/DiPlay-cn-song-v0.2.22-cn.1.apk"))
+        assertEquals("DiPlay-cn-song-v0.2.22-cn.1.apk", release?.apkName)
     }
 
     @Test
     fun refusesTheRetiredGiteeHost() {
         // Gitee is no longer an update source, so its download URLs are not accepted either.
         assertNull(UpdateCatalog.parse(releaseWith(
-            apkUrl = "${GITEE}v0.2.22-cn.1/DiPlay-cn-v0.2.22-cn.1.apk",
-            checksumsUrl = "${GITEE}v0.2.22-cn.1/DiPlay-cn-v0.2.22-cn.1.apk.sha256",
+            apkUrl = "${GITEE}v0.2.22-cn.1/DiPlay-cn-song-v0.2.22-cn.1.apk",
+            checksumsUrl = "${GITEE}v0.2.22-cn.1/DiPlay-cn-song-v0.2.22-cn.1.apk.sha256",
         )))
     }
 
@@ -130,15 +130,15 @@ class UpdateCatalogTest {
     @Test
     fun refusesDownloadUrlsThatAreNotHttpsOnAKnownHost() {
         for (url in listOf(
-            "http://github.com/msdogo/DiPlay-cn-song/releases/download/v0.2.22-cn.1/DiPlay-cn-v0.2.22-cn.1.apk",
-            "https://evil.example/DiPlay-cn-v0.2.22-cn.1.apk",
-            "https://github.com.evil.example/DiPlay-cn-v0.2.22-cn.1.apk",
-            "https://gitee.com.evil.example/DiPlay-cn-v0.2.22-cn.1.apk",
-            "https://github.com@evil.example/DiPlay-cn-v0.2.22-cn.1.apk",
-            "https://evil.example/github.com/DiPlay-cn-v0.2.22-cn.1.apk",
-            "https://github.com:8443/msdogo/DiPlay-cn-song/DiPlay-cn-v0.2.22-cn.1.apk",
-            "file:///sdcard/DiPlay-cn-v0.2.22-cn.1.apk",
-            "ftp://github.com/DiPlay-cn-v0.2.22-cn.1.apk",
+            "http://github.com/msdogo/DiPlay-cn-song/releases/download/v0.2.22-cn.1/DiPlay-cn-song-v0.2.22-cn.1.apk",
+            "https://evil.example/DiPlay-cn-song-v0.2.22-cn.1.apk",
+            "https://github.com.evil.example/DiPlay-cn-song-v0.2.22-cn.1.apk",
+            "https://gitee.com.evil.example/DiPlay-cn-song-v0.2.22-cn.1.apk",
+            "https://github.com@evil.example/DiPlay-cn-song-v0.2.22-cn.1.apk",
+            "https://evil.example/github.com/DiPlay-cn-song-v0.2.22-cn.1.apk",
+            "https://github.com:8443/msdogo/DiPlay-cn-song/DiPlay-cn-song-v0.2.22-cn.1.apk",
+            "file:///sdcard/DiPlay-cn-song-v0.2.22-cn.1.apk",
+            "ftp://github.com/DiPlay-cn-song-v0.2.22-cn.1.apk",
         )) {
             assertNull(url, UpdateCatalog.parse(releaseWith(apkUrl = url)))
             assertNull(url, UpdateCatalog.parse(releaseWith(apkUrl = "${GITHUB}v0.2.22-cn.1/x.apk", checksumsUrl = url)))

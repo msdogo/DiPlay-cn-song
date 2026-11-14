@@ -37,7 +37,7 @@ internal object UpdateAvailability {
             checksumsUrl = values.getString(CHECKSUMS_URL, null) ?: return null,
         )
         // Discard metadata cached by the upstream updater before CN-specific sources were wired.
-        if (release.apkName != "DiPlay-cn-${release.tagName}.apk") {
+        if (release.apkName != "DiPlay-cn-song-${release.tagName}.apk") {
             clear(context)
             return null
         }

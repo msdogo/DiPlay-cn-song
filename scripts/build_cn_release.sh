@@ -19,7 +19,7 @@ if [ -z "$TAG" ] || [ "$TAG" = "none" ]; then
   log "nothing queued; exiting"
   exit 0
 fi
-APK="DiPlay-cn-$TAG.apk"
+APK="DiPlay-cn-song-$TAG.apk"
 
 GITEE_TOKEN="${GITEE_TOKEN:-${DIPLAY_GITEE_TOKEN:-}}"
 if [ -z "$GITEE_TOKEN" ]; then
@@ -90,7 +90,7 @@ id="$(printf %s "$detail" | grep -o '"id": *[0-9]\+' | head -1 | grep -o '[0-9]\
 if [ -n "$id" ] && [ "$(attach_state "$id")" = "READY" ]; then
   if curl -fsSL --max-time 600 -o /tmp/check.apk "https://gitee.com/$REPO/releases/download/$TAG/$APK" \
      && curl -fsSL --max-time 120 -o /tmp/check.sha "https://gitee.com/$REPO/releases/download/$TAG/$APK.sha256" \
-     && (cd /tmp && sed 's#DiPlay-cn-[^ ]*apk#check.apk#' check.sha | sha256sum -c -); then
+     && (cd /tmp && sed 's#DiPlay-cn-song-[^ ]*apk#check.apk#' check.sha | sha256sum -c -); then
     log "$TAG already carries a verified APK; exiting"
     exit 0
   fi

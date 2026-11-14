@@ -24,7 +24,7 @@ class UpdateReleaseLookupTest {
         assertEquals(listOf(UpdateClient.GITHUB_RELEASES_URL), calls)
         assertEquals("v0.2.17-cn.3", release?.tagName)
         assertEquals(
-            "https://github.com/msdogo/DiPlay-cn-song/releases/download/DiPlay-cn-v0.2.17-cn.3.apk",
+            "https://github.com/msdogo/DiPlay-cn-song/releases/download/DiPlay-cn-song-v0.2.17-cn.3.apk",
             release?.apkUrl,
         )
     }
@@ -39,8 +39,8 @@ class UpdateReleaseLookupTest {
     private fun github(tag: String): String = """{
         "tag_name":"$tag",
         "assets":[
-          {"name":"DiPlay-cn-$tag.apk","browser_download_url":"https://github.com/msdogo/DiPlay-cn-song/releases/download/DiPlay-cn-$tag.apk"},
-          {"name":"DiPlay-cn-$tag.apk.sha256","browser_download_url":"https://github.com/msdogo/DiPlay-cn-song/releases/download/DiPlay-cn-$tag.apk.sha256"}
+          {"name":"DiPlay-cn-song-$tag.apk","browser_download_url":"https://github.com/msdogo/DiPlay-cn-song/releases/download/DiPlay-cn-song-$tag.apk"},
+          {"name":"DiPlay-cn-song-$tag.apk.sha256","browser_download_url":"https://github.com/msdogo/DiPlay-cn-song/releases/download/DiPlay-cn-song-$tag.apk.sha256"}
         ]
     }"""
 

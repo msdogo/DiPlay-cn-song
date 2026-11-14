@@ -13,7 +13,7 @@ class UpdateApkCacheTest {
 
     private val release = UpdateRelease(
         "v0.2.18-cn.2",
-        "DiPlay-cn-v0.2.18-cn.2.apk",
+        "DiPlay-cn-song-v0.2.18-cn.2.apk",
         "https://example.test/update.apk",
         "https://example.test/update.sha256",
     )

@@ -53,7 +53,7 @@ The additional wireless/media/theme/own-app-exit records help identify the faili
 APK installation restrictions are controlled by your car's firmware. ADB is optional if your car supports it, not an app runtime requirement:
 
 ```sh
-adb install -r DiPlay-cn-v0.2.22-cn.1.apk
+adb install -r DiPlay-cn-song-v0.2.22-cn.1.apk
 ```
 
 Only use a trusted computer. A different signing certificate cannot update this build; do not uninstall until you have saved any reports you need.

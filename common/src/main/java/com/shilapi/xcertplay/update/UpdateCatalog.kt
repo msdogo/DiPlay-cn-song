@@ -35,7 +35,7 @@ internal object UpdateCatalog {
             val assets = release.optJSONArray("assets") ?: continue
             val tag = release.optString("tag_name")
             if (!Regex("^v\\d+\\.\\d+\\.\\d+(?:\\.\\d+)?-cn\\.\\d+$").matches(tag)) continue
-            val expectedApkName = "DiPlay-cn-$tag.apk"
+            val expectedApkName = "DiPlay-cn-song-$tag.apk"
             var apkName = ""
             var apkUrl = ""
             var legacyChecksumsUrl = ""

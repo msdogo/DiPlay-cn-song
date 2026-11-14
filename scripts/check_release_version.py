@@ -31,7 +31,8 @@ def version(tag: str) -> tuple[int, int, int, int, int]:
 def check(current_tag: str, current_text: str, prior: dict[str, str]) -> None:
     version(current_tag)
     current_code, current_name = config(current_text)
-    if current_name != current_tag.removeprefix("v"):
+    # The fork brands every version string; the tag itself keeps the CN shape.
+    if current_name != "DiPlay-cn-song-" + current_tag.removeprefix("v"):
         raise ValueError(f"tag {current_tag} does not match versionName {current_name}")
     prior_codes = {}
     for tag, text in prior.items():

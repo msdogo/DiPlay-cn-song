@@ -11,7 +11,7 @@ internal object UpdateApkCache {
 
     fun directory(filesDir: File, release: UpdateRelease): File {
         require(validTag.matches(release.tagName)) { "Invalid update version" }
-        require(release.apkName == "DiPlay-cn-${release.tagName}.apk") { "Invalid update filename" }
+        require(release.apkName == "DiPlay-cn-song-${release.tagName}.apk") { "Invalid update filename" }
         return File(File(filesDir, "update"), release.tagName)
     }
 
