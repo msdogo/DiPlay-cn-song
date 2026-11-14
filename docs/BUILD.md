@@ -103,7 +103,7 @@ Run the unit tests, lint checks, and main debug build:
 ```
 
 Check that Gradle reports `BUILD SUCCESSFUL`.
-For the complete CI procedure, see [the Android workflow](../.github/workflows/android.yml).
+For the complete check procedure, see [TESTING.md](TESTING.md).
 That workflow also checks and builds the `home` and `maphost` applications.
 
 ## Build a standalone car-test APK
