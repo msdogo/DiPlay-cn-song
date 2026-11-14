@@ -1,6 +1,8 @@
 # DiPlay CN
 
-> 简体中文说明见 [README.zh-CN.md](README.zh-CN.md)。本仓库基于上游 DiPlay `v0.2.22`。
+> **Mainly adapted for the BYD Song Plus DM-i on DiLink 3.0.** This repository is based on [serein-morii/DiPlay-CN](https://github.com/serein-morii/DiPlay-CN) (itself a CN build of upstream DiPlay `v0.2.22`), with the CN defaults and the on-car checks retargeted to that head unit.
+
+简体中文说明见 [README.zh-CN.md](README.zh-CN.md)。本仓库基于上游 DiPlay `v0.2.22`。
 
 **CarPlay for compatible BYD Android head units.** Wired and wireless, with the familiar DiAuto interface. Independent app: `com.shihab.diplay.cn`; installs alongside official DiPlay.
 

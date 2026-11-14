@@ -1,5 +1,7 @@
 # DiPlay CN
 
+> **主要適配宋 Plus DM-i + DiLink 3.0。** 本倉庫基於 [serein-morii/DiPlay-CN](https://github.com/serein-morii/DiPlay-CN)（其上為 DiPlay `v0.2.22`），CN 預設值與實車驗證皆針對這台車機。
+
 [English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md)
 
 為相容的比亞迪 Android 車機提供有線與無線 CarPlay，採用熟悉的 DiAuto 介面。此 CN 社群版本的套件名稱為 `com.shihab.diplay.cn`，可與官方 DiPlay 並存。

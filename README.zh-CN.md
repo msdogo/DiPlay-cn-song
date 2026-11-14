@@ -1,5 +1,7 @@
 # DiPlay CN
 
+> **主要适配 宋 Plus DM-i + DiLink 3.0。** 本仓库基于 [serein-morii/DiPlay-CN](https://github.com/serein-morii/DiPlay-CN)（上上游为 DiPlay `v0.2.22`），CN 默认值与实车验证都针对这台车机。
+
 本仓库基于上游 DiPlay `v0.2.22`。桌面名称为 **DiPlay CN**，包名为 `com.shihab.diplay.cn`，可与官方正式版并存。
 
 [English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md)
