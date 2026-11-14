@@ -115,6 +115,14 @@ A head unit without a usable logcat has only that report, so the binding history
 
 The diagnostic report shows what the service was given. After the `Wheel key service:` line, `Wheel keys since DiPlay started:` counts the presses, how many DiPlay kept and how many it left to the head unit, and up to 40 `Wheel keys:` lines follow with the time, `key <code>/<scan code>`, the input device number and the outcome. A volume key that navigation volume left alone carries the reason. `presses=0` with the service bound means the head unit handles its wheel keys before Android sees them, so DiPlay cannot use them. The lines are kept in memory and start again when DiPlay's process does. A key that writes text is counted (`textKeysNotListed`) and never listed.
 
+### Next, previous and play/pause without the wheel key service
+
+BYD hands the wheel's next/previous keys to whichever window is in front, so the CarPlay screen claims them itself: while a CarPlay session is in front the keys send CarPlay's media HID next/previous, and outside a session or during a call they keep the car's own action.
+
+The same route covers the wheel's play/pause button. Which keycode that button sends depends on the firmware: the plain media codes, BYD's 353 (DiLink 3 sends 331), or 293/113 on a wheel whose own button the car passes through untouched. The CarPlay screen claims all of them together, because a head unit that will not turn the wheel key service on has no other route to CarPlay's playback control. Outside a session, or during a call, every one of them still keeps the car's own action.
+
+The wheel key service applies the same claim when it is on and the car hands the press to its own app instead of the CarPlay screen, so the two routes never both fire: the window handles the key when it is in front, and the service handles it only when the key falls through to it. A custom play/pause key assignment also cannot collide, because the media codes and 293/113 are reserved from assignment.
+
 ### CarPlay joystick on the steering wheel (optional)
 
 DiPlay already declares a rotary knob for CarPlay's main screen (HID `xcertplay Knob`). Checked with Apple Maps and lists on a Tang: only the knob's turn moves CarPlay's focus (the first turn opens the Maps side panel with search, pinned places and recents), select activates the focused item and back closes the screen; the knob's x/y nudges only pan a focused map, so the joystick does not use them.

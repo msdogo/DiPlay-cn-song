@@ -125,6 +125,8 @@ class WirelessStartupControllerTest {
 
     @Test @Config(shadows = [CarHotspotOffConnectTest.HotspotState::class])
     fun aCarHotspotReportedOffIsNamed() {
+        // The CN build starts the car hotspot itself; this case is about an off report.
+        CarHotspotSettings.setEnabled(RuntimeEnvironment.getApplication(), false)
         CarHotspotOffConnectTest.HotspotState.on = false
         val failure = hotspotStartFailure()
         assertEquals(WirelessStartupFailure.HOTSPOT_CONFIGURATION, failure.reason)

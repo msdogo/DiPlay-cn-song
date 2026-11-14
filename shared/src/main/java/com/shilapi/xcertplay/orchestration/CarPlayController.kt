@@ -1330,6 +1330,12 @@ class CarPlayController(
                             .apply { isDaemon = true; start() }
                     }
                 },
+                // The iPhone's AirPlay client can start late after a reconnect while its Bluetooth
+                // control channel is still perfectly alive. Holding the stack for one more window keeps
+                // the hotspot, the Bonjour advertisement and the published address the phone is already
+                // pointed at, so the connection still lands on the first screen instead of on a teardown.
+                graceMillis = WirelessStartupPolicy.FIRST_TCP_GRACE_MILLIS,
+                graceWanted = { wirelessControlChannelAlive(generation) },
                 log = { debugLog("wireless startup generation=$generation listener=${listenerIdentity.id} $it") },
             )
             firstTcpWatchdog = watchdog
@@ -1852,6 +1858,12 @@ class CarPlayController(
         !closed && phase == Phase.WIRELESS && generation == wirelessGeneration.get() &&
             !wirelessFailureReported.get() && activeSession != null &&
             wirelessConnectionProof.hasRenderedFrame(generation)
+    }
+    // The Bluetooth control channel is still open, so the iPhone is still with us and can still be the one
+    // that dials the AirPlay TCP. That is what buys the extra first-TCP window after a reconnect.
+    private fun wirelessControlChannelAlive(generation: Int): Boolean = synchronized(wirelessResourceLock) {
+        !closed && phase == Phase.WIRELESS && generation == wirelessGeneration.get() &&
+            !wirelessFailureReported.get() && csm?.isClosed == false
     }
 
     private fun armWirelessHandoffWatchdog(generation: Int) {

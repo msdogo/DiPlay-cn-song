@@ -24,7 +24,9 @@ class AmbientMusicTickingTest {
     private val context get() = RuntimeEnvironment.getApplication()
 
     @Test fun noLampUpdateRunsWhileTheFeatureIsOff() {
-        context.getSharedPreferences("ambient_music", Context.MODE_PRIVATE).edit().clear().commit()
+        // The CN default is on, so this test turns the lamps off explicitly.
+        context.getSharedPreferences("ambient_music", Context.MODE_PRIVATE).edit().clear()
+            .putBoolean("enabled", false).commit()
         val sink = AmbientMusicController.openSink(context)
         try {
             settle()
@@ -39,8 +41,9 @@ class AmbientMusicTickingTest {
     }
 
     @Test fun theCarsOwnRhythmKeepsTheUpdateRunningWithoutLampControl() {
+        // The CN default turns the lamps on, so this test keeps them off and only runs the car's rhythm.
         context.getSharedPreferences("ambient_music", Context.MODE_PRIVATE).edit().clear()
-            .putBoolean("carRhythm", true).commit()
+            .putBoolean("enabled", false).putBoolean("carRhythm", true).commit()
         val sink = AmbientMusicController.openSink(context)
         try {
             settle()

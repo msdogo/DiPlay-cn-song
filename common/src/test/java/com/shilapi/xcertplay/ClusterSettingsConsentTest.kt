@@ -9,6 +9,7 @@ import android.widget.Switch
 import com.shilapi.xcertplay.host.R
 import com.shilapi.xcertplay.media.AndroidMediaSink
 import com.shilapi.xcertplay.orchestration.CarPlayController
+import com.shilapi.xcertplay.setup.DiLinkGeneration
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -41,6 +42,9 @@ class ClusterSettingsConsentTest {
         app.getSharedPreferences("diplay", 0).edit().clear().commit()
         // These existing sessions have already answered the optional notification prompt.
         app.getSharedPreferences("diplay", 0).edit().putBoolean("notification_asked", true).commit()
+        // The CN build assumes DiLink 3.0 until the driver picks a generation; the ADB cluster route
+        // covered here is offered on DiLink 4 and later.
+        DiLinkGeneration.save(app, DiLinkGeneration.DILINK_4)
         PendingReconnect.clear()
         CarPlayBackgroundSession.clear()
         ClusterActivityOutput.stopForSettings()

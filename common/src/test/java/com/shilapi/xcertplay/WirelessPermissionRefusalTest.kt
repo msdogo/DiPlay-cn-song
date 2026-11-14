@@ -42,6 +42,8 @@ class WirelessPermissionRefusalTest {
         AirPlayPersistence.saveWirelessHotspotMode(context, WirelessHotspotMode.WIFI_P2P)
         // Not the built-in identity, which needs the private assets of a real build.
         AirPlayPersistence.saveMfiTarget(context, MfiTarget.USB_CH341)
+        // The CN build ships location reporting on; this screen is about the wireless request itself.
+        AirPlayPersistence.saveLocationReportingEnabled(context, false)
         shadowOf(context).grantPermissions(Manifest.permission.RECORD_AUDIO)
         shadowOf(context).denyPermissions(*wireless.toTypedArray())
     }

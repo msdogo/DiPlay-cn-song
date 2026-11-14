@@ -8,6 +8,9 @@ object WirelessStartupPolicy {
     const val INTERFACE_POLL_MILLIS = 250L
     const val STABLE_SAMPLES = 3
     const val FIRST_TCP_MILLIS = 30_000L
+
+    /** The one extra window before a stalled first AirPlay TCP tears the wireless stack down. */
+    const val FIRST_TCP_GRACE_MILLIS = 20_000L
     const val MAX_STARTUP_RETRIES = 5
     const val STABLE_SESSION_MILLIS = 60_000L
 }

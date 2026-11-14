@@ -44,6 +44,11 @@ class BydSettingsReconnectTest {
         ReflectionHelpers.setField(activity, "bydVehicleAdvancedExpanded", true)
         AirPlayPersistence.saveWirelessEnabled(activity, false)
         AirPlayPersistence.saveWirelessHotspotMode(activity, WirelessHotspotMode.MANUAL)
+        // The CN build ships the legacy probe and every vehicle switch on; these cases drive the
+        // built-in preflight from a known off state.
+        BydOutputSettings.setLegacyVehicleProbe(activity, false)
+        BydOutputSettings.setWheelSpeedToIphone(activity, false)
+        BydOutputSettings.setVideoWhileParked(activity, false)
     }
 
     @After fun tearDown() {

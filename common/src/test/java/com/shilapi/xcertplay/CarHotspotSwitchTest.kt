@@ -58,6 +58,8 @@ class CarHotspotSwitchTest {
         Grant.access = LocalAdb.Access.READY
         activity = Robolectric.buildActivity(DiPlayActivity::class.java).get()
         activity.setTheme(android.R.style.Theme_Material_NoActionBar)
+        // The CN build opts into the car hotspot; these cases drive the switch from off.
+        CarHotspotSettings.setEnabled(activity, false)
         AirPlayPersistence.saveWirelessHotspotMode(activity, WirelessHotspotMode.MANUAL)
         AirPlayPersistence.saveAutoStartOnBoot(activity, false)
         controls = LinearLayout(activity)
@@ -177,9 +179,10 @@ class CarHotspotSwitchTest {
 
     @Test fun vehicleControlsAreNotDuplicatedInTheHotspotPermissionCard() {
         assertEquals(1, switches(controls).size)
-        assertFalse(BydOutputSettings.batteryToIphone(activity))
-        assertFalse(BydOutputSettings.wheelSpeedToIphone(activity))
-        assertFalse(BydOutputSettings.videoWhileParked(activity))
+        // The CN build ships these vehicle outputs on, yet they stay out of this card.
+        assertTrue(BydOutputSettings.batteryToIphone(activity))
+        assertTrue(BydOutputSettings.wheelSpeedToIphone(activity))
+        assertTrue(BydOutputSettings.videoWhileParked(activity))
         assertTrue(Grant.requested.isEmpty())
     }
 

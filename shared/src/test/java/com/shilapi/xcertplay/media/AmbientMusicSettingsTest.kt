@@ -17,12 +17,18 @@ class AmbientMusicSettingsTest {
 
     @Before fun clear() { prefs.edit().clear().commit() }
 
-    @Test fun missingPreferencesKeepControlDisabled() {
+    // The CN build ships the lamps on, at full brightness, with a beat-driven album palette.
+    @Test fun missingPreferencesUseTheCnDefaults() {
         val values = AmbientMusicSettings.load(context)
-        assertFalse(values.enabled)
+        assertTrue(values.enabled)
+        assertTrue(values.music)
         assertEquals(listOf(1), values.selectedColors)
-        assertEquals(0, values.brightness)
+        assertEquals(6, values.brightness)
         assertEquals(3, values.area)
+        assertEquals(AmbientColorMode.BEAT, values.colorMode)
+        assertEquals(AmbientColorSpeed.FAST, values.speed)
+        assertEquals(AmbientColorSource.ALBUM, values.colorSource)
+        assertEquals(AmbientIdleBehavior.CAR, values.idle)
     }
 
     @Test fun theCarsOwnRhythmIsOffUntilSavedOnAndSurvivesASave() {
@@ -37,11 +43,11 @@ class AmbientMusicSettingsTest {
     @Test fun oldSingleColorSettingsSupplyMissingPaletteAndModes() {
         prefs.edit().putInt("color", 12).putInt("brightness", 4).commit()
         val values = AmbientMusicSettings.load(context)
-        assertFalse(values.enabled)
-        assertEquals(AmbientColorSource.SELECTED, values.colorSource)
+        assertTrue(values.enabled)
+        assertEquals(AmbientColorSource.ALBUM, values.colorSource)
         assertEquals(listOf(12), values.selectedColors)
         assertEquals(AmbientColorMode.BEAT, values.colorMode)
-        assertEquals(AmbientColorSpeed.STANDARD, values.speed)
+        assertEquals(AmbientColorSpeed.FAST, values.speed)
     }
 
     @Test fun malformedPreferencesUseSafeDefaultsAndValidBounds() {
@@ -50,15 +56,15 @@ class AmbientMusicSettingsTest {
             .putInt("selectedColors", 8).putString("colorMode", "UNKNOWN")
             .putString("speed", "UNKNOWN").putString("colorSource", "UNKNOWN").commit()
         val values = AmbientMusicSettings.load(context)
-        assertFalse(values.enabled)
+        assertTrue(values.enabled)
         assertTrue(values.music)
-        assertEquals(AmbientColorSource.SELECTED, values.colorSource)
+        assertEquals(AmbientColorSource.ALBUM, values.colorSource)
         assertEquals(listOf(31), values.selectedColors)
         assertEquals(0, values.brightness)
         assertEquals(3, values.area)
         assertEquals(AmbientColorMode.BEAT, values.colorMode)
-        assertEquals(AmbientColorSpeed.STANDARD, values.speed)
-        assertEquals(AmbientIdleBehavior.STEADY, values.idle)
+        assertEquals(AmbientColorSpeed.FAST, values.speed)
+        assertEquals(AmbientIdleBehavior.CAR, values.idle)
     }
 
     @Test fun carRhythmFeedRoundTripsAndDefaultsOff() {
@@ -69,10 +75,10 @@ class AmbientMusicSettingsTest {
         assertFalse(AmbientMusicSettings.load(context).carRhythmFeed)
     }
 
-    @Test fun idleChoiceRoundTripsAndUnknownValuesFallBackToTheSteadyGlow() {
-        AmbientMusicSettings.save(context, AmbientMusicSettings.Values(idle = AmbientIdleBehavior.CAR))
-        assertEquals(AmbientIdleBehavior.CAR, AmbientMusicSettings.load(context).idle)
-        prefs.edit().putString("idle", "UNKNOWN").commit()
+    @Test fun idleChoiceRoundTripsAndUnknownValuesFallBackToTheCarBehavior() {
+        AmbientMusicSettings.save(context, AmbientMusicSettings.Values(idle = AmbientIdleBehavior.STEADY))
         assertEquals(AmbientIdleBehavior.STEADY, AmbientMusicSettings.load(context).idle)
+        prefs.edit().putString("idle", "UNKNOWN").commit()
+        assertEquals(AmbientIdleBehavior.CAR, AmbientMusicSettings.load(context).idle)
     }
 }

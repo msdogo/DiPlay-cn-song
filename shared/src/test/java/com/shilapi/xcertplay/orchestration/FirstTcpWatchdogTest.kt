@@ -108,6 +108,58 @@ class FirstTcpWatchdogTest {
         assertEquals(0, failures)
     }
 
+    private fun gracedWatchdog(wanted: () -> Boolean): FirstTcpWatchdog = FirstTcpWatchdog(
+        identity,
+        { delay, action ->
+            deadline = now + delay
+            timer = action
+            val cancel: () -> Unit = { deadline = null }
+            cancel
+        },
+        { failures++ },
+        { now * 1_000_000 },
+        graceMillis = 20_000,
+        graceWanted = wanted,
+    )
+
+    @Test fun graceHoldsTheStackOnceWhenThePhoneIsStillOnBluetooth() {
+        val watch = gracedWatchdog { true }
+        watch.startSessionSent(0)
+        now = 30_000
+        timer!!()
+        assertEquals(0, failures)
+        assertFalse(watch.terminated)
+        assertEquals(50_000L, deadline)
+        // One window only: a second expiry does fail the attempt.
+        now = 50_000
+        timer!!()
+        assertEquals(1, failures)
+        assertTrue(watch.terminated)
+    }
+
+    @Test fun graceIsNotGrantedWithoutALiveControlChannel() {
+        var alive = false
+        val watch = gracedWatchdog { alive }
+        watch.startSessionSent(0)
+        now = 30_000
+        timer!!()
+        assertEquals(1, failures)
+        assertTrue(watch.terminated)
+        alive = true
+    }
+
+    @Test fun anAcceptDuringTheGraceStillEndsTheWait() {
+        val watch = gracedWatchdog { true }
+        watch.startSessionSent(0)
+        now = 30_000
+        timer!!()
+        now = 35_000
+        assertTrue(watch.accepted(event()))
+        timer!!()
+        assertEquals(0, failures)
+        assertFalse(watch.terminated)
+    }
+
     @Test fun concurrentAcceptAndTimeoutHaveExactlyOneOutcome() {
         repeat(50) {
             lateinit var expire: () -> Unit

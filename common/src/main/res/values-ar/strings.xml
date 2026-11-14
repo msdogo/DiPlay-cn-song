@@ -316,12 +316,12 @@
     <string name="review_app_permissions">مراجعة أذونات التطبيق</string>
     <string name="right_hand_drive">قيادة يمنى</string>
     <string name="running">قيد التشغيل</string>
-    <string name="s_1000_ms_most_stable">1000 مللي ثانية · الأكثر استقراراً</string>
+    <string name="s_1000_ms_most_stable">1000 مللي ثانية · الافتراضي</string>
     <string name="s_1_choose_your_connection">1 · اختر اتصالك</string>
     <string name="s_1_connect_a_computer_with_adb_installed_to_the_car_using">1. صِل حاسوباً عليه ADB مثبّت بالسيارة عبر اتصال USB أو التنقيط اللاسلكي الحالي. وافق على التنقيط في السيارة إن طُلب.\n\n2. نفّذ هذا الأمر في طرفية الحاسوب:</string>
     <string name="s_1_open_car_hotspot_settings_turn_the_hotspot_on_and_sele">1. افتح إعدادات نقطة اتصال السيارة، وشغّل نقطة الاتصال واختر 5 GHz إن توفر.\n2. انسخ الاسم وكلمة المرور أدناه كما هما تماماً.\n3. أبقِ نقطة اتصال السيارة مُشغّلة عند الاتصال. يرسل DiPlay البيانات عبر البلوتوث؛ وينضم iPhone تلقائياً.</string>
     <string name="s_2_pair_your_iphone">2 · اقرن iPhone الخاص بك</string>
-    <string name="s_300_ms_default">300 مللي ثانية · الافتراضي</string>
+    <string name="s_300_ms_default">300 مللي ثانية</string>
     <string name="s_30_fps_lighter_load">30 إطاراً/ث · حمل أخف</string>
     <string name="s_3_connect">3 · اتصل</string>
     <string name="s_3_tap_check_and_enable_below_this_enables_the_cluster_ma">3. اضغط «تحقق وفعّل» أدناه. يفعّل ذلك خريطة المجموعة واتباع السمة تلقائياً. ستعيد جلسة CarPlay النشطة الاتصال مرة واحدة. يمكنك بعد ذلك فصل الحاسوب.</string>
@@ -478,7 +478,7 @@
     <string name="hide_advanced_vehicle_data">إخفاء بيانات السيارة المتقدمة</string>
     <string name="advanced_vehicle_data_description">استخدم قراءة DiLink 5.0 الافتراضية أو اكتشف حقول وحدة قديمة. لا تتم كتابة أي شيء إلى السيارة.</string>
     <string name="vehicle_data_mode">وضع بيانات السيارة</string>
-    <string name="vehicle_data_mode_default">الوضع الافتراضي · تم التحقق منه على وحدات DiLink 5.0</string>
+    <string name="vehicle_data_mode_default">الوضع المدمج · تم التحقق منه على وحدات DiLink 5.0</string>
     <string name="vehicle_data_mode_legacy">اكتشاف الوحدات القديمة · تم اختباره على وحدة التحكم 13 / DiLink 3.0</string>
     <string name="adb_not_checked">لم يتم فحص ADB بعد.</string>
     <string name="vehicle_probe_saved_automatic">تم حفظ قدرات السيارة. يجري التحقق المباشر عبر ADB وأي إعادة اكتشاف لازمة تلقائيًا.</string>
@@ -598,6 +598,7 @@
     <string name="wheel_map_zoom_description">يبدّل زر BYD المخصّص أزرار الصوت بين التحكم في الصوت وتكبير خريطة لوحة العدادات ما دامت لوحة العدادات تعرض خريطة CarPlay. أثناء المكالمة تتحكم الأزرار دائمًا في الصوت. في بعض السيارات يرسل زر الصوت في الكونسول الأزرار نفسها، لذلك يكبّر الخريطة أيضًا أثناء وضع التكبير. يستخدم خدمة أزرار المقود في DiPlay؛ وتحتاج الملاحظة على لوحة العدادات إلى ADB.</string>
     <string name="wheel_keys_service_on">خدمة أزرار المقود: مفعّلة</string>
     <string name="wheel_keys_service_starting">خدمة أزرار المقود: مسموح بها، جارٍ التشغيل…</string>
+<string name="wheel_keys_service_crashed">تصنّف السيارة هذه الخدمة كمعطّلة، لذا قد لا تبدأ بعد.</string>
     <string name="wheel_keys_service_off">خدمة أزرار المقود: متوقفة</string>
     <string name="wheel_keys_enable_adb">تفعيل خدمة أزرار المقود · ADB</string>
     <string name="wheel_keys_adb_failed">ADB غير متاح: %1$s</string>

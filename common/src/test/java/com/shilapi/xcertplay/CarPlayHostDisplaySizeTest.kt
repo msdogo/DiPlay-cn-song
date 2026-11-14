@@ -235,6 +235,8 @@ class CarPlayHostDisplaySizeTest {
     }
 
     @Test fun resumingWhileEditingDoesNotOverwriteTheBarPreview() {
+        AirPlayPersistence.saveHideTopBar(activity, true)
+        AirPlayPersistence.saveHideBottomBar(activity, false)
         startSession()
         setField("menuOpen", true)
         setField("hideTopBar", false)
@@ -264,6 +266,8 @@ class CarPlayHostDisplaySizeTest {
     }
 
     @Test fun optionalTemporaryBarsRevealAndRestoreAfterFiveSecondsWithoutRenegotiatingCarPlay() {
+        AirPlayPersistence.saveHideTopBar(activity, true)
+        AirPlayPersistence.saveHideBottomBar(activity, true)
         val display = startSession()
         setField("temporarySystemBarsEnabled", true)
         setField("gestureFingerCount", 3)
@@ -291,6 +295,8 @@ class CarPlayHostDisplaySizeTest {
     }
 
     @Test fun revealingAgainExtendsTheExpiryAndBackgroundCancelsIt() {
+        setField("hideTopBar", true)
+        setField("hideBottomBar", true)
         setField("temporarySystemBarsEnabled", true)
         invoke("applyFullscreenMode")
         assertEquals(true, invoke("showTemporarySystemBars"))
@@ -344,6 +350,8 @@ class CarPlayHostDisplaySizeTest {
     }
 
     @Test fun menuBarChangesPreviewWithoutSavingAndCancelRestoresTheSavedValues() {
+        AirPlayPersistence.saveHideTopBar(activity, true)
+        AirPlayPersistence.saveHideBottomBar(activity, true)
         invoke("loadPersistedSettings")
         setField("settingsBaseline", invoke("captureSettingsBaseline"))
         setField("menuOpen", true)
@@ -364,6 +372,8 @@ class CarPlayHostDisplaySizeTest {
 
     @Test fun savingMenuBarsPreservesAnIndependentCombination() {
         AirPlayPersistence.saveWirelessHotspotMode(activity, WirelessHotspotMode.WIFI_P2P)
+        AirPlayPersistence.saveHideTopBar(activity, true)
+        AirPlayPersistence.saveHideBottomBar(activity, true)
         invoke("loadPersistedSettings")
         setField("menuOpen", true)
         val controls = invoke("buildFullscreenSection") as ViewGroup
@@ -541,6 +551,10 @@ class CarPlayHostDisplaySizeTest {
     }
 
     @Test fun adoptingABackgroundSessionPreservesItsCanvasOnResize() {
+        AirPlayPersistence.saveHideTopBar(activity, true)
+        AirPlayPersistence.saveHideBottomBar(activity, true)
+        setField("hideTopBar", true)
+        setField("hideBottomBar", true)
         val display = CarPlaySessionDisplay(1536, 792, Surface.ROTATION_0, true, true, 1920, 990)
         val sink = AndroidMediaSink()
         val controller = CarPlayController(activity,
@@ -624,11 +638,19 @@ class CarPlayHostDisplaySizeTest {
         windowHeight: Int = 990,
         canvasWidth: Int = windowWidth,
         canvasHeight: Int = windowHeight,
+        hideTopBar: Boolean = true,
+        hideBottomBar: Boolean = true,
     ): CarPlaySessionDisplay =
-        CarPlaySessionDisplay(canvasWidth, canvasHeight, rotation, true, true, windowWidth, windowHeight).also {
-            setField("activeDisplaySize", size(windowWidth, windowHeight))
-            setField("sessionDisplay", it)
-        }
+        CarPlaySessionDisplay(canvasWidth, canvasHeight, rotation, hideTopBar, hideBottomBar, windowWidth, windowHeight)
+            .also {
+                // 系统栏默认关闭后，测试需要显式写入与画布一致的偏好。
+                AirPlayPersistence.saveHideTopBar(activity, hideTopBar)
+                AirPlayPersistence.saveHideBottomBar(activity, hideBottomBar)
+                setField("hideTopBar", hideTopBar)
+                setField("hideBottomBar", hideBottomBar)
+                setField("activeDisplaySize", size(windowWidth, windowHeight))
+                setField("sessionDisplay", it)
+            }
 
     private fun keepLogs(): Int = ShadowLog.getLogsForTag("xcertplay-usb").count {
         it.msg.contains("keeping CarPlay session")

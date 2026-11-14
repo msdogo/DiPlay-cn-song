@@ -19,9 +19,10 @@ class MediaBufferPersistenceTest {
         prefs.edit().clear().apply()
     }
 
-    @Test fun freshInstallUsesTheDefaultForBothTransports() {
-        assertEquals(300, AirPlayPersistence.loadMediaBufferMillis(context, wireless = true))
-        assertEquals(300, AirPlayPersistence.loadMediaBufferMillis(context, wireless = false))
+    @Test fun freshInstallUsesTheMostStableBufferForBothTransports() {
+        // The CN build ships the most stable buffer (1000 ms) for both transports.
+        assertEquals(1000, AirPlayPersistence.loadMediaBufferMillis(context, wireless = true))
+        assertEquals(1000, AirPlayPersistence.loadMediaBufferMillis(context, wireless = false))
     }
 
     @Test fun wiredAndWirelessAreSavedSeparately() {

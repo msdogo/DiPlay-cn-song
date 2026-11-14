@@ -29,6 +29,8 @@ class LocationReportingSettingsTest {
 
     @Before fun setUp() {
         shadowOf(context).denyPermissions(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+        // The CN build ships location reporting on; these cases start from the off state they drive.
+        AirPlayPersistence.saveLocationReportingEnabled(context, false)
     }
 
     @After fun tearDown() {
@@ -36,11 +38,18 @@ class LocationReportingSettingsTest {
         controller?.pause()?.stop()?.destroy()
     }
 
-    @Test fun currentSettingsExposeLocationSwitchWithDefaultOff() {
+    @Test fun currentSettingsExposeTheSavedOffChoice() {
         openSettings()
 
         assertFalse(locationSwitch().isChecked)
         assertFalse(AirPlayPersistence.loadLocationReportingEnabled(context))
+    }
+
+    @Test fun aFreshInstallShipsLocationReportingOn() {
+        context.getSharedPreferences("xcertplay_airplay", android.content.Context.MODE_PRIVATE)
+            .edit().clear().commit()
+
+        assertTrue(AirPlayPersistence.loadLocationReportingEnabled(context))
     }
 
     @Test fun grantedSettingSurvivesRecreationAndCanBeDisabled() {

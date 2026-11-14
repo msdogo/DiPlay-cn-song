@@ -324,14 +324,14 @@
     <string name="right_hand_drive">Кермо праворуч</string>
     <string name="running">Працює</string>
     <string name="s_0_3x">0.3x</string>
-    <string name="s_1000_ms_most_stable">1000 мс · найстабільніше</string>
+    <string name="s_1000_ms_most_stable">1000 мс · типово</string>
     <string name="s_1_0x">1.0x</string>
     <string name="s_1_choose_your_connection">1 · Виберіть спосіб підключення</string>
     <string name="s_1_connect_a_computer_with_adb_installed_to_the_car_using">1. Підключіть до автомобіля комп’ютер з установленим ADB через наявне USB-з’єднання або бездротове налагодження. Якщо автомобіль запитає, дозвольте налагодження.\n\n2. Виконайте цю команду в терміналі комп’ютера:</string>
     <string name="s_1_open_car_hotspot_settings_turn_the_hotspot_on_and_sele">1. Відкрийте налаштування точки доступу автомобіля, увімкніть її та виберіть 5 ГГц, якщо доступно.\n2. Точно скопіюйте її назву й пароль нижче.\n3. Не вимикайте точку доступу під час підключення. DiPlay передасть дані через Bluetooth; iPhone приєднається автоматично.</string>
     <string name="s_2_4_ghz">2,4 ГГц</string>
     <string name="s_2_pair_your_iphone">2 · Спарте свій iPhone</string>
-    <string name="s_300_ms_default">300 мс · типово</string>
+    <string name="s_300_ms_default">300 мс</string>
     <string name="s_30_fps_lighter_load">30 кадрів/с · менше навантаження</string>
     <string name="s_3_connect">3 · Підключіться</string>
     <string name="s_3_tap_check_and_enable_below_this_enables_the_cluster_ma">3. Натисніть «Перевірити й увімкнути» нижче. Це ввімкне карту на панелі приладів та автоматичне стеження за темою. Активний сеанс CarPlay перепідключиться один раз. Після цього комп’ютер можна відключити.</string>
@@ -491,7 +491,7 @@
     <string name="hide_advanced_vehicle_data">Приховати розширені дані автомобіля</string>
     <string name="advanced_vehicle_data_description">Виберіть типове зчитування даних DiLink 5.0 або визначте поля на старому головному пристрої. Нічого не записується в автомобіль.</string>
     <string name="vehicle_data_mode">Режим даних автомобіля</string>
-    <string name="vehicle_data_mode_default">Типовий режим · перевірено на головних пристроях DiLink 5.0</string>
+    <string name="vehicle_data_mode_default">Вбудований режим · перевірено на головних пристроях DiLink 5.0</string>
     <string name="vehicle_data_mode_legacy">Визначення старого головного пристрою · випробувано на контролері 13 / DiLink 3.0</string>
     <string name="adb_not_checked">ADB ще не перевірено.</string>
     <string name="vehicle_probe_saved_automatic">Можливості автомобіля збережено. Перевірка через ADB і за потреби повторне визначення виконуються автоматично.</string>
@@ -611,6 +611,7 @@
     <string name="wheel_map_zoom_description">Кастомна кнопка BYD перемикає кнопки гучності між звуком і масштабом карти на приборці, поки там карта CarPlay. Під час дзвінка кнопки завжди керують звуком. На деяких авто гучність на консолі надсилає ті самі кнопки, тож у режимі масштабу вона теж змінює масштаб. Працює через службу кнопок керма DiPlay; напис на приборці потребує ADB.</string>
     <string name="wheel_keys_service_on">Служба кнопок керма: увімкнена</string>
     <string name="wheel_keys_service_starting">Служба кнопок керма: дозволена, запускається…</string>
+<string name="wheel_keys_service_crashed">Автомобіль позначає службу як аварійну, тому вона може ще не запускатися.</string>
     <string name="wheel_keys_service_off">Служба кнопок керма: вимкнена</string>
     <string name="wheel_keys_enable_adb">Увімкнути службу кнопок керма · ADB</string>
     <string name="wheel_keys_adb_failed">ADB недоступний: %1$s</string>

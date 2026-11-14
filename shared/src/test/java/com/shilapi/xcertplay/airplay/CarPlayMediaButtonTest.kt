@@ -18,6 +18,9 @@ class CarPlayMediaButtonTest {
         assertEquals(CarPlayMediaButton.PLAY_PAUSE, CarPlayMediaButton.forKeyCode(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE))
         assertEquals(CarPlayMediaButton.PLAY_PAUSE, CarPlayMediaButton.forKeyCode(KeyEvent.KEYCODE_HEADSETHOOK))
         assertEquals(CarPlayMediaButton.PLAY_PAUSE, CarPlayMediaButton.forKeyCode(353))
+        // The DiLink 3 wheel's own play/pause button, in both of the codes its firmware sends.
+        assertEquals(CarPlayMediaButton.PLAY_PAUSE, CarPlayMediaButton.forKeyCode(293))
+        assertEquals(CarPlayMediaButton.PLAY_PAUSE, CarPlayMediaButton.forKeyCode(113))
         // DiLink 3 (Han, GCC) sends KEYCODE_AUTO_MEDIA_PLAY_PAUSE unchanged.
         assertNull(CarPlayMediaButton.forKeyCode(331))
         assertEquals(CarPlayMediaButton.PLAY_PAUSE,
@@ -72,20 +75,35 @@ class CarPlayMediaButtonTest {
 
         assertEquals(CarPlayMediaButton.NEXT, claim(KeyEvent.KEYCODE_MEDIA_NEXT))
         assertEquals(CarPlayMediaButton.PREVIOUS, claim(KeyEvent.KEYCODE_MEDIA_PREVIOUS))
+        // The wheel's own play/pause button is part of the same row and works the same way.
+        assertEquals(CarPlayMediaButton.PLAY_PAUSE, claim(CarPlayMediaButton.KEYCODE_BYD_WHEEL_PLAY_PAUSE))
+        assertEquals(CarPlayMediaButton.PLAY_PAUSE, claim(CarPlayMediaButton.KEYCODE_BYD_WHEEL_PLAY_PAUSE_ALT))
         // Without a session, or during a call, the wheel keeps the car's own action.
         assertNull(claim(KeyEvent.KEYCODE_MEDIA_NEXT, sessionActive = false))
         assertNull(claim(KeyEvent.KEYCODE_MEDIA_PREVIOUS, sessionActive = false))
         assertNull(claim(KeyEvent.KEYCODE_MEDIA_NEXT, inCall = true))
         assertNull(claim(KeyEvent.KEYCODE_MEDIA_PREVIOUS, inCall = true))
+        assertNull(claim(CarPlayMediaButton.KEYCODE_BYD_WHEEL_PLAY_PAUSE, sessionActive = false))
+        assertNull(claim(CarPlayMediaButton.KEYCODE_BYD_WHEEL_PLAY_PAUSE, inCall = true))
+        assertNull(claim(CarPlayMediaButton.KEYCODE_BYD_WHEEL_PLAY_PAUSE_ALT, inCall = true))
     }
 
     @Test
-    fun theWindowLeavesPlayPauseAndUnrelatedKeysAlone() {
-        // BYD acts on play/pause itself, and the wheel key service owns it for DiLink 3. Claiming it
-        // in the window too would take it away from the car for every driver.
+    fun theWindowClaimsEveryPlayPauseCodeTheWheelCanSend() {
+        // The head unit rewrites the wheel's play/pause button to one of these depending on the
+        // firmware, and on a head unit with no ADB the window is the only route that is left, so
+        // all of them have to be claimed together.
         for (keyCode in listOf(KeyEvent.KEYCODE_MEDIA_PLAY, KeyEvent.KEYCODE_MEDIA_PAUSE,
-            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_HEADSETHOOK, 353, 331,
-            KeyEvent.KEYCODE_MEDIA_STOP, KeyEvent.KEYCODE_VOLUME_UP)) {
+            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_HEADSETHOOK, 353, 331)) {
+            assertEquals("keyCode=$keyCode", CarPlayMediaButton.PLAY_PAUSE,
+                CarPlayMediaButton.forCarPlayWindow(keyCode, true, false))
+        }
+    }
+
+    @Test
+    fun theWindowLeavesUnrelatedKeysAlone() {
+        for (keyCode in listOf(KeyEvent.KEYCODE_MEDIA_STOP, KeyEvent.KEYCODE_VOLUME_UP,
+            KeyEvent.KEYCODE_VOLUME_DOWN, KeyEvent.KEYCODE_MEDIA_FAST_FORWARD)) {
             assertNull("keyCode=$keyCode", CarPlayMediaButton.forCarPlayWindow(keyCode, true, false))
         }
     }

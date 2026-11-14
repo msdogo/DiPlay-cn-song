@@ -4,6 +4,7 @@ import com.shilapi.xcertplay.transport.Iap2IdentificationConfig
 import com.shilapi.xcertplay.transport.VehicleGear
 import com.shilapi.xcertplay.transport.withVehicleStatusFrom
 import org.junit.Assert.*
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -22,6 +23,12 @@ class BydBatteryReadinessTest {
         firmwareVersion = "1", hardwareVersion = "1", carPlayUsbInterfaceNumber = 3,
         vehicleStatusEnabled = true,
     )
+
+    @Before
+    fun useTheBuiltInAddresses() {
+        // The CN build defaults to the legacy head-unit probe; these checks cover the built-in path.
+        BydOutputSettings.setLegacyVehicleProbe(context, false)
+    }
 
     @Test
     fun delayedAdbApprovalPrimesTheNextConnectionFromTheSettingsCheck() {

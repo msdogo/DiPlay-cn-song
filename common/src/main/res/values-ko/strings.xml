@@ -331,14 +331,14 @@
     <string name="right_hand_drive">우핸들</string>
     <string name="running">실행 중</string>
     <string name="s_0_3x">0.3x</string>
-    <string name="s_1000_ms_most_stable">1000 ms · 가장 안정적</string>
+    <string name="s_1000_ms_most_stable">1000 ms · 기본값</string>
     <string name="s_1_0x">1.0x</string>
     <string name="s_1_choose_your_connection">1 · 연결 방식 선택</string>
     <string name="s_1_connect_a_computer_with_adb_installed_to_the_car_using">1. ADB가 설치된 컴퓨터를 기존 USB 또는 무선 디버깅 연결로 차량에 연결하세요. 차량에서 요청하면 디버깅을 허용하세요.\n\n2. 컴퓨터 터미널에서 다음 명령을 실행하세요:</string>
     <string name="s_1_open_car_hotspot_settings_turn_the_hotspot_on_and_sele">1. 차량 핫스팟 설정을 열고 핫스팟을 켠 다음, 가능하면 5 GHz를 선택하세요.\n2. 이름과 비밀번호를 아래에 정확히 복사하세요.\n3. 연결 중에는 차량 핫스팟을 켜 두세요. DiPlay가 Bluetooth로 정보를 보내면 iPhone이 자동으로 연결됩니다.</string>
     <string name="s_2_4_ghz">2.4 GHz</string>
     <string name="s_2_pair_your_iphone">2 · iPhone 페어링</string>
-    <string name="s_300_ms_default">300 ms · 기본값</string>
+    <string name="s_300_ms_default">300 ms</string>
     <string name="s_30_fps_lighter_load">30 fps · 부하 감소</string>
     <string name="s_3_connect">3 · 연결</string>
     <string name="s_3_tap_check_and_enable_below_this_enables_the_cluster_ma">3. 아래의 확인 및 사용을 탭하세요. 계기판 지도와 자동 테마 추적이 활성화됩니다. 현재 CarPlay 세션은 한 번 다시 연결됩니다. 그런 다음 컴퓨터 연결을 해제해도 됩니다.</string>
@@ -565,7 +565,7 @@
     <string name="hide_advanced_vehicle_data">고급 차량 데이터 숨기기</string>
     <string name="advanced_vehicle_data_description">기본 DiLink 5.0 데이터 경로를 선택하거나 레거시 헤드 유닛에서 필드를 감지합니다. 차량에는 아무것도 기록되지 않습니다.</string>
     <string name="vehicle_data_mode">차량 데이터 모드</string>
-    <string name="vehicle_data_mode_default">기본 모드 · DiLink 5.0 헤드 유닛에서 검증됨</string>
+    <string name="vehicle_data_mode_default">내장 모드 · DiLink 5.0 헤드 유닛에서 검증됨</string>
     <string name="vehicle_data_mode_legacy">레거시 헤드 유닛 감지 · 컨트롤러 13 / DiLink 3.0에서 테스트됨</string>
     <string name="adb_not_checked">ADB를 확인하지 않았습니다.</string>
     <string name="vehicle_probe_saved_automatic">차량 기능이 저장되었습니다. 실시간 ADB 검증과 필요한 재감지가 자동으로 실행됩니다.</string>
@@ -690,6 +690,7 @@
     <string name="wheel_map_zoom_description">BYD 사용자 지정 키를 누르면 계기판에 CarPlay 지도가 표시되는 동안 볼륨 키가 볼륨과 계기판 지도 확대/축소 사이에서 전환됩니다. 통화 중에는 항상 볼륨을 조절합니다. 일부 차량에서는 센터 콘솔 볼륨 키도 같은 신호를 보내므로 확대/축소가 켜져 있을 때 함께 확대/축소됩니다. DiPlay 핸들 키 서비스를 사용합니다. 계기판 메모에는 ADB가 필요합니다.</string>
     <string name="wheel_keys_service_on">핸들 키 서비스: 켜짐</string>
     <string name="wheel_keys_service_starting">핸들 키 서비스: 허용됨, 시작 중…</string>
+<string name="wheel_keys_service_crashed">차량이 이 서비스를 비정상 종료로 표시하여 아직 시작되지 않을 수 있습니다.</string>
     <string name="wheel_keys_service_off">핸들 키 서비스: 꺼짐</string>
     <string name="wheel_keys_enable_adb">핸들 키 서비스 켜기 · ADB</string>
     <string name="wheel_keys_adb_failed">ADB를 사용할 수 없음: %1$s</string>

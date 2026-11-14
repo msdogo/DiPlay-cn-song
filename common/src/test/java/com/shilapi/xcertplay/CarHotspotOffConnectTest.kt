@@ -41,6 +41,8 @@ class CarHotspotOffConnectTest {
         AirPlayPersistence.saveWirelessHotspotMode(context, WirelessHotspotMode.MANUAL)
         AirPlayPersistence.saveManualHotspotSsid(context, "Car 5G")
         AirPlayPersistence.saveManualHotspotPassphrase(context, "12345678")
+        // The CN build opts into the hotspot; this case is about a head unit that reports it off.
+        CarHotspotSettings.setEnabled(context, false)
     }
 
     @After fun tearDown() {

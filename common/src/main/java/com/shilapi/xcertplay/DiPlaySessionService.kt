@@ -54,10 +54,18 @@ class DiPlaySessionService : Service() {
         } else startForeground(1, notification)
         return START_NOT_STICKY
     }
+    /**
+     * BYD removes DiPlay's CarPlay task as soon as another car app - including DiPlay's own home
+     * page after the back key - comes to the front, while the process itself keeps running. The
+     * connection belongs to this service, not to that task, so tearing it down here forced a fresh
+     * iAP2/AirPlay handshake on every return and left the next attempt waiting for the iPhone to
+     * dial AirPlay. Keep the session and the foreground notification; only a real disconnect
+     * ([ACTION_STOP]) stops it.
+     */
     override fun onTaskRemoved(rootIntent: Intent?) {
-        // BYD's recents force-stops the package ~10 ms after removing the task: end guidance first.
+        if (CarPlayBackgroundSession.hasSession()) return
+        // Nothing is running any more: drop the dashboard and cluster cards with the task.
         com.shilapi.xcertplay.hud.BydNavigationOutputs.endNow()
-        CarPlayBackgroundSession.stop()
         stopSelf()
     }
     companion object {

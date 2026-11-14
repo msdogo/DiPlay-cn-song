@@ -34,6 +34,14 @@ object CarPlayMediaButton {
     const val KEYCODE_BYD_CARPLAY_VOICE_LONG = 328
 
     /**
+     * The DiLink 3 steering wheel's own play/pause button. The wheel sends it as 293; some firmware
+     * builds label the same press 113, so both codes are claimed and the button works either way.
+     * Neither is a standard Android key, so claiming them here cannot take a key away from the car.
+     */
+    const val KEYCODE_BYD_WHEEL_PLAY_PAUSE = 293
+    const val KEYCODE_BYD_WHEEL_PLAY_PAUSE_ALT = 113
+
+    /**
      * Whether [keyCode] is a voice key that opens Siri. The BYD wheel sends each press as an
      * instant down/up pair, so a long press arrives as its own key rather than as a held one.
      */
@@ -57,6 +65,7 @@ object CarPlayMediaButton {
         KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
         KeyEvent.KEYCODE_HEADSETHOOK,
         KEYCODE_BYD_AUTO_MEDIA_PLAY_PAUSE -> PLAY_PAUSE
+        KEYCODE_BYD_WHEEL_PLAY_PAUSE, KEYCODE_BYD_WHEEL_PLAY_PAUSE_ALT -> PLAY_PAUSE
         KEYCODE_BYD_AUTO_MEDIA_PLAY_PAUSE_DILINK3 -> if (experimentalDiLink3Keys) PLAY_PAUSE else null
         else -> null
     }
@@ -70,9 +79,17 @@ object CarPlayMediaButton {
      * makes the wheel change tracks without the accessibility service, which a head unit with no ADB
      * cannot turn on.
      *
-     * Only next and previous are claimed. Play/pause is left alone: BYD acts on it itself, and the
-     * wheel key service owns it for DiLink 3. Nothing is claimed outside a CarPlay session, or during
-     * a call, where the car's own call handling is what the driver expects from these keys.
+     * Next, previous and every code a BYD wheel uses for play/pause are claimed: the wheel's own
+     * [KEYCODE_BYD_WHEEL_PLAY_PAUSE] and [KEYCODE_BYD_WHEEL_PLAY_PAUSE_ALT], the standard media
+     * codes, and BYD's 353 and 331. The head unit rewrites the button to one of those depending on
+     * the firmware, and only the window route is left when the wheel key service cannot be turned
+     * on, so the whole transport row has to work here.
+     *
+     * Claiming play/pause in the window costs the car nothing outside this screen: the CarPlay
+     * screen is only in front while the driver is watching CarPlay, and the key's BYD action (its
+     * own player) is unreachable from there anyway. Nothing is claimed outside a CarPlay session,
+     * or during a call, where the car's own call handling is what the driver expects from these
+     * keys.
      */
     fun forCarPlayWindow(
         keyCode: Int,
@@ -83,6 +100,17 @@ object CarPlayMediaButton {
         return when (keyCode) {
             KeyEvent.KEYCODE_MEDIA_NEXT -> NEXT
             KeyEvent.KEYCODE_MEDIA_PREVIOUS -> PREVIOUS
+            // The same press reaches the window under different codes depending on the firmware:
+            // BYD's own 293 / 113, the standard play/pause codes it rewrites them to, and the
+            // DiLink 3 codes 353 / 331 when the firmware does not rewrite them at all.
+            KeyEvent.KEYCODE_MEDIA_PLAY,
+            KeyEvent.KEYCODE_MEDIA_PAUSE,
+            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
+            KeyEvent.KEYCODE_HEADSETHOOK,
+            KEYCODE_BYD_AUTO_MEDIA_PLAY_PAUSE,
+            KEYCODE_BYD_AUTO_MEDIA_PLAY_PAUSE_DILINK3,
+            KEYCODE_BYD_WHEEL_PLAY_PAUSE,
+            KEYCODE_BYD_WHEEL_PLAY_PAUSE_ALT -> PLAY_PAUSE
             else -> null
         }
     }

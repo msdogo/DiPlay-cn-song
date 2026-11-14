@@ -7,8 +7,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import com.shilapi.xcertplay.host.R
+import com.shilapi.xcertplay.network.CarHotspotSettings
 import java.util.Locale
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -28,6 +30,8 @@ class CarHotspotNameTextTest {
 
     @Before fun setUp() {
         clearSettings()
+        // These screens describe the state before the CN build's ready-made hotspot is opted in.
+        CarHotspotSettings.setEnabled(context, false)
         // The car hotspot is off, as on a head unit that has just been switched on.
         context.sendStickyBroadcast(Intent("android.net.wifi.WIFI_AP_STATE_CHANGED")
             .putExtra("wifi_state", 11).putExtra("wifi_ap_mode", 1))
@@ -42,6 +46,17 @@ class CarHotspotNameTextTest {
     private fun clearSettings() {
         context.getSharedPreferences("diplay", 0).edit().clear().commit()
         context.getSharedPreferences("xcertplay_airplay", 0).edit().clear().commit()
+        // The CN build ships "car"/"12341234"; these screens describe the state before a name is saved.
+        AirPlayPersistence.saveManualHotspotSsid(context, "")
+        AirPlayPersistence.saveManualHotspotPassphrase(context, "")
+    }
+
+    @Test fun aFreshInstallShipsTheCarHotspotDetails() {
+        context.getSharedPreferences("xcertplay_airplay", 0).edit().clear().commit()
+        context.getSharedPreferences("diplay_car_hotspot", 0).edit().clear().commit()
+        assertTrue(CarHotspotSettings.enabled(context))
+        assertEquals("car", AirPlayPersistence.loadManualHotspotSsid(context))
+        assertEquals("12341234", AirPlayPersistence.loadManualHotspotPassphrase(context))
     }
 
     private fun saveHotspot(name: String) {

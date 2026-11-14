@@ -31,7 +31,18 @@ class AmbientSettingsRedesignTest {
     private lateinit var activity: DiPlayActivity
 
     @Before fun setUp() {
-        RuntimeEnvironment.getApplication().getSharedPreferences("ambient_music", 0).edit().clear().commit()
+        // The CN build ships ambient lighting on at full brightness with the album palette and the
+        // car's own idle glow. These dialog tests start from a neutral, off draft instead.
+        RuntimeEnvironment.getApplication().getSharedPreferences("ambient_music", 0).edit().clear()
+            .putBoolean("enabled", false)
+            .putBoolean("music", true)
+            .putInt("brightness", 0)
+            .putString("speed", "STANDARD")
+            .putString("idle", "STEADY")
+            .putString("colorSource", "SELECTED")
+            .putInt("color", 1)
+            .putInt("area", 3)
+            .commit()
         activity = Robolectric.buildActivity(DiPlayActivity::class.java).get()
         activity.setTheme(android.R.style.Theme_Material_NoActionBar)
         activity.ambientSupportCheck = { CompletableFuture.completedFuture(true) }
@@ -45,7 +56,7 @@ class AmbientSettingsRedesignTest {
     }
 
     @Test fun followingMusicInOneAreaDescribesTheIdleGlowAndLeavesTheOtherZoneAlone() {
-        val lines = AmbientBehaviorText.lines(activity, AmbientMusicSettings.Values(enabled = true, music = true, brightness = 4, area = 1))
+        val lines = AmbientBehaviorText.lines(activity, AmbientMusicSettings.Values(enabled = true, music = true, brightness = 4, area = 1, idle = AmbientIdleBehavior.STEADY))
         assertEquals(
             listOf(
                 text(R.string.settings_ambient_behavior_follow, text(R.string.settings_ambient_front), 4),
@@ -85,7 +96,7 @@ class AmbientSettingsRedesignTest {
     }
 
     @Test fun levelZeroHoldsEveryZoneAtTheLowestLevel() {
-        val lines = AmbientBehaviorText.lines(activity, AmbientMusicSettings.Values(enabled = true, music = true, brightness = 0, area = 2))
+        val lines = AmbientBehaviorText.lines(activity, AmbientMusicSettings.Values(enabled = true, music = true, brightness = 0, area = 2, idle = AmbientIdleBehavior.STEADY))
         assertEquals(listOf(text(R.string.settings_ambient_behavior_lowest), text(R.string.settings_ambient_behavior_restore)), lines)
     }
 
@@ -140,7 +151,7 @@ class AmbientSettingsRedesignTest {
     }
 
     @Test fun fixedModeIsSingleColorAndKeepsTheFirstSelectedColor() {
-        AmbientMusicSettings.save(activity, AmbientMusicSettings.Values(selectedColors = listOf(3, 8), color = 3))
+        AmbientMusicSettings.save(activity, AmbientMusicSettings.Values(selectedColors = listOf(3, 8), color = 3, colorSource = AmbientColorSource.SELECTED))
         val dialog = open()
         musicSwitch(dialog).isChecked = false
         swatches(dialog).first { it.contentDescription == text(R.string.settings_ambient_swatch, 12) }.performClick()
@@ -151,7 +162,7 @@ class AmbientSettingsRedesignTest {
     }
 
     @Test fun switchingToFixedCollapsesTheSelectionToTheFirstColor() {
-        AmbientMusicSettings.save(activity, AmbientMusicSettings.Values(selectedColors = listOf(3, 8), color = 3))
+        AmbientMusicSettings.save(activity, AmbientMusicSettings.Values(selectedColors = listOf(3, 8), color = 3, colorSource = AmbientColorSource.SELECTED))
         val dialog = open()
         musicSwitch(dialog).isChecked = false
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()

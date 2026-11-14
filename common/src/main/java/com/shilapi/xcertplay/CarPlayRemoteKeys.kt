@@ -45,6 +45,10 @@ internal object CarPlayRemoteKeys {
         CarPlayMediaButton.KEYCODE_BYD_AUTO_MEDIA_VOICE_LONG,
         CarPlayMediaButton.KEYCODE_BYD_CARPLAY_VOICE,
         CarPlayMediaButton.KEYCODE_BYD_CARPLAY_VOICE_LONG,
+        // The wheel's own play/pause button: the CarPlay window claims it, so it must not also be
+        // learned as a custom play/pause key (that would send two presses for one tap).
+        CarPlayMediaButton.KEYCODE_BYD_WHEEL_PLAY_PAUSE,
+        CarPlayMediaButton.KEYCODE_BYD_WHEEL_PLAY_PAUSE_ALT,
         KeyEvent.KEYCODE_TV, KeyEvent.KEYCODE_TV_INPUT,
         KeyEvent.KEYCODE_GUIDE, KeyEvent.KEYCODE_CHANNEL_UP, KeyEvent.KEYCODE_CHANNEL_DOWN,
         KeyEvent.KEYCODE_SYSTEM_NAVIGATION_UP, KeyEvent.KEYCODE_SYSTEM_NAVIGATION_DOWN,

@@ -24,7 +24,9 @@ class CarPlayCallControlsOptInTest {
         BydCarPlayCall.end()
     }
 
-    @Test fun newCallKeysCannotConsumeOrSendAnythingWithoutOptIn() {
+    @Test fun turningTheOptInOffStopsTheCallKeys() {
+        // The CN build ships the experimental call keys on; the switch itself must still gate them.
+        BydOutputSettings.setCarPlayCallControls(app, false)
         val controller = mock(CarPlayController::class.java)
         for (code in listOf(313, 314, 309)) {
             assertFalse(CarPlayCallKeys.onKey(app, code, true, controller))

@@ -530,8 +530,8 @@ open class CarPlayHostActivity : ComponentActivity() {
     private var pendingViewAreas: CarPlayViewAreas? = null
     /** The dock the running session declared; null before the first connection. */
     private var sessionDock: CarPlayDock? = null
-    private var hideTopBar = true
-    private var hideBottomBar = true
+    private var hideTopBar = false
+    private var hideBottomBar = false
     private var temporarySystemBarsEnabled = false
     private var temporarySystemBarsVisible = false
     private val hideTemporarySystemBars = Runnable {
@@ -1831,6 +1831,12 @@ open class CarPlayHostActivity : ComponentActivity() {
             sessionActive = activeAirPlaySession != null,
             inCall = inCall(this),
         )
+        if (downOrUp && event.repeatCount == 0) {
+            // A wheel key that the car keeps for itself never reaches this method, so this line
+            // is the only evidence of what the button actually sends on a given firmware.
+            appendLog("Key: " + event.keyCode + "/" + event.scanCode + " device " + event.deviceId +
+                " carPlayClaimed=" + (mediaPress != null))
+        }
         if (downOrUp && mediaPress != null) {
             // A media button is a tap, and BYD sends each tap as an instant down/up pair: send once,
             // on the press. The release is swallowed rather than passed on, or BYD's own player would
@@ -3795,10 +3801,13 @@ open class CarPlayHostActivity : ComponentActivity() {
                 com.shilapi.xcertplay.media.MediaAudioBuffer.presets.map { millis ->
                     millis to getString(
                         when (millis) {
-                            500 -> R.string.s_300_ms_default
-                            1000 -> R.string.s_1000_ms_most_stable
-                            else -> R.string.s_300_ms_default
+                            com.shilapi.xcertplay.media.MediaAudioBuffer.MOST_STABLE_MILLIS ->
+                                R.string.s_1000_ms_most_stable
+                            com.shilapi.xcertplay.media.MediaAudioBuffer.DEFAULT_MILLIS ->
+                                R.string.s_300_ms_default
+                            else -> R.string.settings_music_buffer_ms
                         },
+                        millis,
                     )
                 },
                 overlayMediaBufferMillis,
@@ -5961,7 +5970,16 @@ open class CarPlayHostActivity : ComponentActivity() {
         if (CarPlayBackgroundSession.hasSession() && !CarPlayBackgroundSession.isOwner(this)) return
         if (shuttingDown.get() || menuOpen || handshakeResetInProgress || controller != null) return
         val controllerGeneration = restartGeneration
-        val config = createRuntimeConfig()
+        // A saved setting the runtime config refuses (a manual hotspot without an SSID, for one) used to
+        // throw straight through the permission-result callback and take the activity with it, which left
+        // the iPhone connected with no first screen. Report it and stay usable instead of crashing.
+        val config = try {
+            createRuntimeConfig()
+        } catch (error: RuntimeException) {
+            appendLog("CarPlay settings are not usable: ${error.javaClass.simpleName}: ${error.message}")
+            setConnectionStage(R.string.could_not_start_carplay_return_to_diplay_and_check_app_per)
+            return
+        }
         val effectiveSize = if (isMultiWindowActive() && !AirPlayPersistence.loadAdaptPipResolution(this) &&
             maximumDetectedWidthPixels >= size.width && maximumDetectedHeightPixels >= size.height &&
             (maximumDetectedWidthPixels > size.width || maximumDetectedHeightPixels > size.height)) {

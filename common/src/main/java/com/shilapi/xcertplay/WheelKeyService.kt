@@ -295,7 +295,24 @@ class WheelKeyService : AccessibilityService() {
             },
         )
         when (action) {
-            WheelZoomKeys.Action.PASS -> return navigationKey(event)
+            WheelZoomKeys.Action.PASS -> {
+                // The CarPlay screen claims the same keys while it is in front. This covers the
+                // case where the car hands the press to its own app instead of that screen and the
+                // accessibility filter is the only place DiPlay still sees it.
+                val carPlayPress = CarPlayMediaButton.forCarPlayWindow(
+                    event.keyCode,
+                    sessionActive = activeSession != null,
+                    inCall = calling,
+                )
+                if (carPlayPress != null) {
+                    if (down && event.repeatCount == 0) {
+                        val sent = controller?.sendMediaButton(carPlayPress) == true
+                        note("CarPlay media key " + event.keyCode + ": press " + carPlayPress + " sent=" + sent)
+                    }
+                    return true
+                }
+                return navigationKey(event)
+            }
             WheelZoomKeys.Action.CONSUME -> Unit
             WheelZoomKeys.Action.MODE_ON -> announce(zoomOn = true)
             WheelZoomKeys.Action.MODE_OFF -> announce(zoomOn = false)
@@ -495,6 +512,7 @@ class WheelKeyService : AccessibilityService() {
         private const val RESTORE_RETRY_MILLIS = 10_000L
         private const val RESTORE_ATTEMPTS = 6
         private const val RESTORE_PREFS = "wheel_key_restore"
+        private const val CRASH_LIST_FRESH_MILLIS = 10 * 60 * 1000L
         @Volatile private var running: WheelKeyService? = null
         @Volatile private var lastObservedDoubleSiriEvent: WheelKeyEventFingerprint? = null
         private val restoring = AtomicBoolean(false)
@@ -719,6 +737,20 @@ class WheelKeyService : AccessibilityService() {
             val at = prefs.getLong("at", 0L)
             if (at == 0L) return "none"
             return "ageMs=${System.currentTimeMillis() - at} ${prefs.getString("trail", null)}"
+        }
+
+        /**
+         * Whether the last accessibility dump still kept the service under "Crashed services" while it is
+         * not bound. The car then refuses to bind it however often the settings name it, so DiPlay shows
+         * that state instead of an endless "starting…" and the driver learns the repair is the way out (#606).
+         */
+        internal fun crashListed(context: Context): Boolean {
+            if (connected()) return false
+            val prefs = context.getSharedPreferences(REPAIR_PREFS, Context.MODE_PRIVATE)
+            // A dump from long ago says nothing about the list the car holds now.
+            if (System.currentTimeMillis() - prefs.getLong("dumpAt", 0L) > CRASH_LIST_FRESH_MILLIS) return false
+            val crashed = prefs.getString("crashed", null) ?: return false
+            return crashed.contains(component(context).flattenToString())
         }
 
         /** Whether the car still says "allowed" for the wheel key service. */

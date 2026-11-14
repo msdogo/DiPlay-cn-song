@@ -322,14 +322,14 @@
     <string name="right_hand_drive">Sağdan direksiyon</string>
     <string name="running">Çalışıyor</string>
     <string name="s_0_3x">0,3 kat</string>
-    <string name="s_1000_ms_most_stable">1000 ms · en kararlı</string>
+    <string name="s_1000_ms_most_stable">1000 ms · varsayılan</string>
     <string name="s_1_0x">1,0 kat</string>
     <string name="s_1_choose_your_connection">1 · Bağlantınızı seçin</string>
     <string name="s_1_connect_a_computer_with_adb_installed_to_the_car_using">1. Mevcut USB veya kablosuz hata ayıklama bağlantınızı kullanarak ADB yüklü bir bilgisayarı araca bağlayın. Sorulursa araçta hata ayıklamayı onaylayın.\n\n2. Bu komutu bilgisayarın terminalinde çalıştırın:</string>
     <string name="s_1_open_car_hotspot_settings_turn_the_hotspot_on_and_sele">1. Araç erişim noktası ayarlarını açın, erişim noktasını açın ve varsa 5 GHz\'i seçin.\n2. Aşağıya adını ve parolasını tam olarak kopyalayın.\n3. Bağlanırken araç erişim noktasını açık bırakın. DiPlay ayrıntıları Bluetooth üzerinden gönderir; iPhone\'unuz otomatik olarak katılır.</string>
     <string name="s_2_4_ghz">2,4 GHz</string>
     <string name="s_2_pair_your_iphone">2 · iPhone\'unuzu eşleştirin</string>
-    <string name="s_300_ms_default">300 ms · varsayılan</string>
+    <string name="s_300_ms_default">300 ms</string>
     <string name="s_30_fps_lighter_load">30 fps · daha düşük yük</string>
     <string name="s_3_connect">3 · Bağlan</string>
     <string name="s_3_tap_check_and_enable_below_this_enables_the_cluster_ma">3. Aşağıdaki Kontrol et ve etkinleştir düğmesine dokunun. Bu, gösterge paneli haritasını ve otomatik tema takibini etkinleştirir. Etkin bir CarPlay oturumu bir kez yeniden bağlanır. Ardından bilgisayar bağlantısını kesebilirsiniz.</string>
@@ -550,7 +550,7 @@
     <string name="hide_advanced_vehicle_data">Gelişmiş araç verilerini gizle</string>
     <string name="advanced_vehicle_data_description">Varsayılan DiLink 5.0 veri yolunu seçin veya eski bir ana ünitedeki alanları algılayın. Araca hiçbir şey yazılmaz.</string>
     <string name="vehicle_data_mode">Araç veri modu</string>
-    <string name="vehicle_data_mode_default">Varsayılan mod · DiLink 5.0 ana ünitelerinde doğrulandı</string>
+    <string name="vehicle_data_mode_default">Yerleşik mod · DiLink 5.0 ana ünitelerinde doğrulandı</string>
     <string name="vehicle_data_mode_legacy">Eski ana ünite algılama · kontrolcü 13 / DiLink 3.0 üzerinde test edildi</string>
     <string name="adb_not_checked">ADB kontrol edilmedi.</string>
     <string name="vehicle_probe_saved_automatic">Araç yetenekleri kaydedildi. Canlı ADB doğrulaması ve gereken yeniden yoklama otomatik olarak çalışır.</string>
@@ -659,6 +659,7 @@
     <string name="wheel_map_zoom_description">Gösterge paneli CarPlay haritasını gösterirken, BYD\'nin özel tuşu ses tuşlarını ses düzeyi ile gösterge haritası yakınlaştırması arasında değiştirir. Bir arama her zaman ses düzeyini korur. Bazı araçlarda konsol ses düzeyi aynı tuşları gönderdiğinden yakınlaştırma açıkken o da yakınlaştırır. DiPlay\'in direksiyon tuşu hizmetini kullanır; göstergedeki bildirim ADB gerektirir.</string>
     <string name="wheel_keys_service_on">Direksiyon tuşu hizmeti: açık</string>
     <string name="wheel_keys_service_starting">Direksiyon tuşu hizmeti: izin verildi, başlatılıyor…</string>
+<string name="wheel_keys_service_crashed">Araç bu hizmeti çökmüş olarak işaretliyor, bu yüzden henüz başlamayabilir.</string>
     <string name="wheel_keys_service_off">Direksiyon tuşu hizmeti: kapalı</string>
     <string name="wheel_keys_enable_adb">Direksiyon tuşu hizmetini aç · ADB</string>
     <string name="wheel_keys_adb_failed">ADB kullanılamıyor: %1$s</string>

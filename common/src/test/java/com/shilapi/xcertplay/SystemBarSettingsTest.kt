@@ -27,11 +27,11 @@ class SystemBarSettingsTest {
         controller?.pause()?.stop()?.destroy()
     }
 
-    @Test fun settingsExposeTwoIndependentSwitchesWithTheExistingDefaults() {
+    @Test fun settingsExposeTwoIndependentSwitchesOffByDefault() {
         openSettings()
 
-        assertTrue(statusBarSwitch().isChecked)
-        assertTrue(navigationBarSwitch().isChecked)
+        assertFalse(statusBarSwitch().isChecked)
+        assertFalse(navigationBarSwitch().isChecked)
         assertFalse(descendants(activity.window.decorView).filterIsInstance<Switch>()
             .any { it.contentDescription == activity.getString(R.string.full_screen) })
     }
@@ -54,6 +54,8 @@ class SystemBarSettingsTest {
     }
 
     @Test fun togglingEitherBarPreservesTheOtherPreferenceAndSwitch() {
+        AirPlayPersistence.saveHideTopBar(context, true)
+        AirPlayPersistence.saveHideBottomBar(context, true)
         openSettings()
 
         statusBarSwitch().performClick()
@@ -67,6 +69,8 @@ class SystemBarSettingsTest {
     }
 
     @Test fun hidingOnlyTheStatusBarSurvivesRecreation() {
+        AirPlayPersistence.saveHideTopBar(context, true)
+        AirPlayPersistence.saveHideBottomBar(context, true)
         openSettings()
         navigationBarSwitch().performClick()
 

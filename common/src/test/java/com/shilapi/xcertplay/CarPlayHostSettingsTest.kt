@@ -67,6 +67,8 @@ class CarPlayHostSettingsTest {
             .set(CarPlayBackgroundSession, activity)
         AirPlayPersistence.saveMfiTarget(activity, MfiTarget.USB_CH341)
         AirPlayPersistence.saveWirelessHotspotMode(activity, WirelessHotspotMode.WIFI_P2P)
+        // The CN build ships location reporting on, which would ask for Location before VPN consent.
+        AirPlayPersistence.saveLocationReportingEnabled(activity, false)
         invoke("loadPersistedSettings")
         invoke("buildContentView")
     }

@@ -4,11 +4,11 @@ import android.content.Context
 
 object AmbientMusicSettings {
     private const val PREFS = "ambient_music"
-    data class Values(val enabled: Boolean = false, val music: Boolean = true,
+    data class Values(val enabled: Boolean = true, val music: Boolean = true,
         val colorMode: AmbientColorMode = AmbientColorMode.BEAT,
-        val speed: AmbientColorSpeed = AmbientColorSpeed.STANDARD, val selectedColors: List<Int> = listOf(1), val colorCycle: Boolean = false, val color: Int = 1, val brightness: Int = 0, val area: Int = 3,
-        val colorSource: AmbientColorSource = AmbientColorSource.SELECTED,
-        val idle: AmbientIdleBehavior = AmbientIdleBehavior.STEADY,
+        val speed: AmbientColorSpeed = AmbientColorSpeed.FAST, val selectedColors: List<Int> = listOf(1), val colorCycle: Boolean = false, val color: Int = 1, val brightness: Int = 6, val area: Int = 3,
+        val colorSource: AmbientColorSource = AmbientColorSource.ALBUM,
+        val idle: AmbientIdleBehavior = AmbientIdleBehavior.CAR,
         // The car's own music rhythm while CarPlay music plays; DiPlay then leaves the lamps to the car.
         val carRhythm: Boolean = false,
         // Sends the played music's spectrum to the car for that rhythm, where the car makes none of its own.
@@ -21,20 +21,20 @@ object AmbientMusicSettings {
         val color = integer("color", 1).coerceIn(1, 31)
         val palette = runCatching { p.getStringSet("selectedColors", null)?.mapNotNull { it.toIntOrNull() } }.getOrNull()
         return Values(
-            enabled = boolean("enabled", false),
+            enabled = boolean("enabled", true),
             music = boolean("music", true),
             colorMode = runCatching { AmbientColorMode.valueOf(text("colorMode", "BEAT")) }.getOrDefault(AmbientColorMode.BEAT),
-            speed = runCatching { AmbientColorSpeed.valueOf(text("speed", "STANDARD")) }.getOrDefault(AmbientColorSpeed.STANDARD),
+            speed = runCatching { AmbientColorSpeed.valueOf(text("speed", "FAST")) }.getOrDefault(AmbientColorSpeed.FAST),
             selectedColors = normalizeAmbientPalette(palette ?: listOf(color), color),
             colorCycle = boolean("colorCycle", false),
             color = color,
-            brightness = integer("brightness", 0).coerceIn(0, 6),
+            brightness = integer("brightness", 6).coerceIn(0, 6),
             area = integer("area", 3).coerceIn(1, 3),
-            colorSource = runCatching { AmbientColorSource.valueOf(text("colorSource", "SELECTED")) }.getOrDefault(AmbientColorSource.SELECTED),
-                        idle = runCatching { AmbientIdleBehavior.valueOf(text("idle", "STEADY")) }.getOrDefault(AmbientIdleBehavior.STEADY),
+            colorSource = runCatching { AmbientColorSource.valueOf(text("colorSource", "ALBUM")) }.getOrDefault(AmbientColorSource.ALBUM),
+            idle = runCatching { AmbientIdleBehavior.valueOf(text("idle", "CAR")) }.getOrDefault(AmbientIdleBehavior.CAR),
             carRhythm = boolean("carRhythm", false),
             carRhythmFeed = boolean("carRhythmFeed", false),
-                    )
+        )
     }
     fun save(context: Context, values: Values) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()

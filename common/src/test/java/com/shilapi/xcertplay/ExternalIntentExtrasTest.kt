@@ -38,6 +38,8 @@ class ExternalIntentExtrasTest {
         app.getSharedPreferences("diplay", 0).edit().clear().commit()
         app.getSharedPreferences("xcertplay_airplay", 0).edit().clear().commit()
         app.getSharedPreferences("diplay_phone_wake", Context.MODE_PRIVATE).edit().clear().commit()
+        // The CN build connects when DiPlay opens; these cases watch what an outside app can start.
+        DiPlayPreferences.saveAutoConnect(app, false)
         CarPlayBackgroundSession.clear()
     }
 

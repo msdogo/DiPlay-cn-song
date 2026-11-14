@@ -212,6 +212,7 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
     private var homeLastProblem: TextView? = null
     private var wheelKeyStatus: TextView? = null
     private var wheelKeyActions: List<android.view.View> = emptyList()
+    private var wheelKeyCrashRetryAt = 0L
     private var connectButton: Button? = null
     private var disconnectButton: Button? = null
     private var lastRunning: Boolean? = null
@@ -456,10 +457,16 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
         }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (page != "home") navigateBack()
+                if (page != "home") { navigateBack(); return }
+                // With CarPlay running behind this page the two screens alternate: CarPlay's Back opens
+                // this page, and Back here returns to CarPlay instead of dropping out of the app.
+                if (CarPlayBackgroundSession.hasSession()) {
+                    openProjection()
+                    return
+                }
                 // Back on the home page only hides the app: a car app must return exactly where
                 // it left off instead of reopening from scratch.
-                else moveTaskToBack(true)
+                moveTaskToBack(true)
             }
         })
     }
@@ -3697,7 +3704,7 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
         footer.addView(space(16), LinearLayout.LayoutParams(dp(16), 1))
         footer.addView(button(getString(R.string.setup_next), true) {
             if (step == SetupGuide.STEP_CAR && SetupGuide.applyFirstSetupDefaults(this,
-                    DiLinkGeneration.confirmed(this) ?: DiLinkGeneration.detect().generation,
+                    DiLinkGeneration.current(this),
                     phoneChosen = DiPlayPreferences.phoneAddress(this) != null)) markReconnectNeeded()
             setupStep = step + 1; render()
         },
@@ -3712,7 +3719,7 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
 
     private fun setupCarStep(content: LinearLayout) {
         val detection = DiLinkGeneration.detect()
-        val selected = DiLinkGeneration.confirmed(this) ?: detection.generation
+        val selected = DiLinkGeneration.current(this)
         setupTitle(content, R.string.setup_car_title, when (detection.source) {
             DiLinkGeneration.Source.SYSTEM_VERSION -> getString(R.string.setup_car_detected, dilinkLabel(detection.generation))
             DiLinkGeneration.Source.LIKELY -> getString(R.string.setup_car_likely, dilinkLabel(detection.generation))
@@ -4720,6 +4727,12 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
         wheelKeyStatus = label(getString(wheelKeyServiceState()), 14, if (connected) MUTED else WARNING)
         card.addView(wheelKeyStatus)
         if (!connected) {
+            // The car's own accessibility dump keeps the service under "Crashed services", so nothing will
+            // bind it however long the row says "starting…". Name that state, and let the ADB button below
+            // run the repair that takes the service out of the list long enough for the mark to clear (#606).
+            if (WheelKeyService.crashListed(this)) {
+                card.addView(label(getString(R.string.wheel_keys_service_crashed), 13, WARNING))
+            }
             val enable = actionButton(getString(R.string.wheel_keys_enable_adb), false) {
                 Thread({
                     val access = WheelKeyService.enableOverAdb(this)
@@ -4746,6 +4759,20 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
         else -> R.string.wheel_keys_service_off
     }
 
+    /**
+     * The car marked the service crashed before this page opened: retry the repair anyway, once in a while,
+     * because the car clears the mark on its own once the process is gone for good (#606). The repair has
+     * its own guard, so a page that is left open cannot stack them.
+     */
+    private fun retryCrashedWheelKeyService() {
+        if (!WheelKeyService.crashListed(this)) return
+        val now = System.currentTimeMillis()
+        if (now - wheelKeyCrashRetryAt < CRASHED_WHEEL_KEY_RETRY_MILLIS) return
+        wheelKeyCrashRetryAt = now
+        WheelKeyLog.note("wheel key row: the car lists the service as crashed; repairing again")
+        WheelKeyService.restoreIfNeeded(this)
+    }
+
     /** The card is rebuilt only on navigation, so the row follows a late bind here, once a second. */
     private fun refreshWheelKeyStatus() {
         val view = wheelKeyStatus ?: return
@@ -4761,6 +4788,9 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
             val visibility = if (connected) android.view.View.GONE else android.view.View.VISIBLE
             for (action in wheelKeyActions) action.visibility = visibility
         }
+        // Not tied to a label change: a service the car keeps crashed leaves the label on "starting…" for
+        // good, and that is exactly the state the periodic repair is for (#606).
+        if (!connected) retryCrashedWheelKeyService()
     }
 
     private fun wheelKeyAssignButton(card: LinearLayout, role: WheelZoomSettings.Role, name: String) {
@@ -7806,6 +7836,7 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
         private const val REPORT_VIEW_MAX_CHARS = 200_000
         private const val REPORT_HEAD_MAX_CHARS = 20_000
         private const val APPEARANCE_POLL_MILLIS = 2_000L
+        private const val CRASHED_WHEEL_KEY_RETRY_MILLIS = 5 * 60 * 1000L
         private const val APPEARANCE_BUTTON_TAG = "app_appearance_button"
         private const val SETTINGS_SEARCH_BUTTON_TAG = "settings_search_button"
         private const val SETTINGS_HEADER_COMPACT_GAP_DP = 8

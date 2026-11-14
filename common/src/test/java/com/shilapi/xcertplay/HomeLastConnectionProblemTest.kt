@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import com.shilapi.xcertplay.host.R
+import com.shilapi.xcertplay.network.CarHotspotSettings
 import com.shilapi.xcertplay.network.WirelessStartupFailure
 import com.shilapi.xcertplay.orchestration.CarPlayStatus
 import com.shilapi.xcertplay.orchestration.ConnectionFailureCause
@@ -35,6 +36,8 @@ class HomeLastConnectionProblemTest {
         AirPlayPersistence.saveWirelessHotspotMode(context, WirelessHotspotMode.MANUAL)
         AirPlayPersistence.saveManualHotspotSsid(context, "Car 5G")
         AirPlayPersistence.saveManualHotspotPassphrase(context, "12345678")
+        // The CN build opts into the hotspot; a head unit that reports it off still warns.
+        CarHotspotSettings.setEnabled(context, false)
     }
 
     @After fun tearDown() {

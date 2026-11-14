@@ -66,7 +66,14 @@ class BydVehicleDataSettingsTest {
         shadowOf(context.packageManager).removePackage("com.byd.amapservice")
     }
 
+    @Test fun aFreshInstallDefaultsToTheLegacyProbe() {
+        context.getSharedPreferences("diplay_byd_outputs", 0).edit().clear().commit()
+        assertTrue(BydOutputSettings.legacyVehicleProbe(context))
+    }
+
     @Test fun defaultModeShowsTheDiLink5SettingsBehindTheAdvancedButton() {
+        // The CN build ships the legacy probe; this case covers the built-in DiLink 5.0 settings.
+        BydOutputSettings.setLegacyVehicleProbe(context, false)
         openSettings()
 
         assertFalse(BydOutputSettings.navigationAvailable(activity))
@@ -87,6 +94,7 @@ class BydVehicleDataSettingsTest {
     }
 
     @Test fun aTappedAdbCheckShowsItsResult() {
+        BydOutputSettings.setLegacyVehicleProbe(context, false)
         // #724: on a head unit without network ADB only the status line changed, so the button seemed dead.
         openSettings()
         texts().single { it.text == activity.getString(R.string.advanced_vehicle_data) }.performClick()
@@ -99,6 +107,7 @@ class BydVehicleDataSettingsTest {
     }
 
     @Test fun anAdbCheckWithUsbDebuggingOnSaysTheNetworkDoesNotAnswer() {
+        BydOutputSettings.setLegacyVehicleProbe(context, false)
         // #1002: on DiLink UI7.0 the developer-options switch stays on after a restart while nothing listens on 5555.
         openSettings()
         texts().single { it.text == activity.getString(R.string.advanced_vehicle_data) }.performClick()
@@ -395,6 +404,9 @@ class BydVehicleDataSettingsTest {
         val saved = capabilities.copy(fields = capabilities.fields + (BydVehicleField.SOC to
             capabilities.result(BydVehicleField.SOC).copy(value = 25.0)))
         BydOutputSettings.setLegacyVehicleProbe(context, true)
+        // The CN build ships the battery output on, which starts a polling read that would report
+        // "no reading" over the probe snapshot; these cases are about the probe publication itself.
+        BydOutputSettings.setBatteryToIphone(context, false)
         BydVehicleFieldStore.save(context, saved)
         backend.checkStateResult = BydAdbAccess.State.READY
         backend.probeResult = BydVehicleProbeOutcome(
@@ -503,6 +515,12 @@ class BydVehicleDataSettingsTest {
     }
 
     @Test fun aSwitchTurnedOnDuringAValidationIsValidatedAfterIt() {
+        // Start from every vehicle switch off: the CN build ships them on.
+        for (off in listOf(
+            { BydOutputSettings.setBatteryToIphone(context, false) },
+            { BydOutputSettings.setWheelSpeedToIphone(context, false) },
+            { BydOutputSettings.setVideoWhileParked(context, false) },
+        )) off()
         BydVehicleFieldStore.save(context, supportedCapabilities(BydVehicleFieldStore.firmwareKey()))
         backend.checkResult = readableStatus()
         openSettings()
@@ -571,6 +589,8 @@ class BydVehicleDataSettingsTest {
     }
 
     @Test fun failedLegacySelectionKeepsTheDefaultMode() {
+        // The CN build ships the legacy probe; start from the built-in mode this case falls back to.
+        BydOutputSettings.setLegacyVehicleProbe(context, false)
         backend.checkStateResult = BydAdbAccess.State.ADB_OFF
         openSettings()
         ReflectionHelpers.setField(activity, "bydVehicleAdvancedExpanded", true)
@@ -607,6 +627,10 @@ class BydVehicleDataSettingsTest {
     }
 
     @Test fun defaultModeShowsUnreadableDataAndReconnectsOnlyOnceItIsReadable() {
+        // The CN build ships the legacy probe; this case covers the built-in DiLink 5.0 settings.
+        BydOutputSettings.setLegacyVehicleProbe(context, false)
+        // Start with the switch off so this case drives it on; the CN build ships it on.
+        BydOutputSettings.setBatteryToIphone(context, false)
         backend.checkResult = BydAdbAccess.Status(BydAdbAccess.State.READY)
         openSettings()
         connectCarPlay()
@@ -633,6 +657,10 @@ class BydVehicleDataSettingsTest {
     }
 
     @Test fun switchingToLegacyReconnectsOnlyWhenAVehicleDataSwitchIsOn() {
+        // The CN build ships every vehicle switch on; start with none so the first switch decides.
+        BydOutputSettings.setBatteryToIphone(context, false)
+        BydOutputSettings.setWheelSpeedToIphone(context, false)
+        BydOutputSettings.setVideoWhileParked(context, false)
         backend.checkStateResult = BydAdbAccess.State.READY
         backend.probeResult = BydVehicleProbeOutcome(
             BydAdbAccess.State.READY,
@@ -653,6 +681,7 @@ class BydVehicleDataSettingsTest {
     }
 
     @Test fun modeChoiceIsDisabledWhileAnAdbCheckRuns() {
+        BydOutputSettings.setLegacyVehicleProbe(context, false)
         backend.checkResult = readableStatus()
         openSettings()
         texts().single { it.text == activity.getString(R.string.advanced_vehicle_data) }.performClick()

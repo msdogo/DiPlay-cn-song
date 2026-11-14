@@ -26,9 +26,17 @@ class CarHotspotSetupTest {
         context.getSharedPreferences("xcertplay_airplay", 0).edit().clear().commit()
     }
 
-    @Test fun freshInstallAndExistingHotspotConfigurationRemainOptedOut() {
-        assertFalse(CarHotspotSettings.enabled(context))
+    @Test fun freshInstallShipsTheCarHotspotReadyToStart() {
+        // The CN build opts in and pre-fills a valid "car"/"12341234" hotspot.
+        assertTrue(CarHotspotSettings.enabled(context))
+        assertTrue(eligible())
+    }
+
+    @Test fun turningTheChoiceOffStopsTheStartupEvenWithSavedCredentials() {
         configureHotspot()
+        assertTrue(eligible())
+        CarHotspotSettings.setEnabled(context, false)
+        assertFalse(CarHotspotSettings.enabled(context))
         assertFalse(eligible())
     }
 
@@ -78,6 +86,9 @@ class CarHotspotSetupTest {
 
     @Test fun startupNeedsValidCredentialsAndNoExistingSession() {
         CarHotspotSettings.setEnabled(context, true)
+        // The CN build pre-fills valid credentials, so a cleared name is what blocks startup.
+        AirPlayPersistence.saveManualHotspotSsid(context, "")
+        AirPlayPersistence.saveManualHotspotPassphrase(context, "")
         assertFalse(eligible())
         configureHotspot()
         assertTrue(eligible())

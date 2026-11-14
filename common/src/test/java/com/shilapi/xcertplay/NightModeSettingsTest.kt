@@ -37,6 +37,9 @@ class NightModeSettingsTest {
         activity = controller.get()
         activity.setTheme(android.R.style.Theme_Material_NoActionBar)
         activity.getSharedPreferences("xcertplay_airplay", 0).edit().clear().commit()
+        // The CN build ships ready-made hotspot details; this page describes a fresh, unset car.
+        AirPlayPersistence.saveManualHotspotSsid(activity, "")
+        AirPlayPersistence.saveManualHotspotPassphrase(activity, "")
         CarPlayBackgroundSession.clear()
         controller.setup().visible()
     }

@@ -57,6 +57,9 @@ object AirPlayPersistence {
     private const val KEY_WIFI_P2P_PREFERRED_CHANNEL = "wifi_p2p_preferred_channel"
     /** Read by CarPlayController in the shared module under the same name. */
     const val KEY_WIFI_DIRECT_SCAN_PAUSE = "wifi_direct_scan_pause"
+    /** The CN build starts with a car hotspot the phone can join without any typing. */
+    const val DEFAULT_HOTSPOT_SSID = "car"
+    const val DEFAULT_HOTSPOT_PASSPHRASE = "12341234"
     private const val KEY_MANUAL_HOTSPOT_SSID = "manual_hotspot_ssid"
     private const val KEY_MANUAL_HOTSPOT_PASSPHRASE = "manual_hotspot_passphrase"
     private const val KEY_MANUAL_HOTSPOT_BAND = "manual_hotspot_band"
@@ -307,11 +310,22 @@ object AirPlayPersistence {
             .apply()
     }
 
+    /**
+     * The stream guidance uses when nothing was chosen yet. BYD head units offer navigation audio
+     * on legacy stream 14; 0 falls back to usage-based routing, which the mixer and the wheel then
+     * treat as media. A saved value, including an explicit 0, always wins.
+     */
+    const val DEFAULT_NAVIGATION_AUDIO_CHANNEL = 14
+
     fun loadNavigationAudioChannel(context: Context): Int {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        // Inherit the legacy value only when the new key is absent; preserve fresh-install and explicit 0 defaults.
-        return prefs.getInt(KEY_NAVIGATION_AUDIO_CHANNEL, prefs.getInt(KEY_NAVIGATION_STREAM_TYPE, 0))
-            .takeIf { it in AUDIO_CHANNELS } ?: 0
+        // Inherit the legacy value only when the new key is absent; an explicit choice always wins.
+        val stored = when {
+            prefs.contains(KEY_NAVIGATION_AUDIO_CHANNEL) -> prefs.getInt(KEY_NAVIGATION_AUDIO_CHANNEL, DEFAULT_NAVIGATION_AUDIO_CHANNEL)
+            prefs.contains(KEY_NAVIGATION_STREAM_TYPE) -> prefs.getInt(KEY_NAVIGATION_STREAM_TYPE, DEFAULT_NAVIGATION_AUDIO_CHANNEL)
+            else -> DEFAULT_NAVIGATION_AUDIO_CHANNEL
+        }
+        return stored.takeIf { it in AUDIO_CHANNELS } ?: 0
     }
 
     fun saveNavigationAudioChannel(context: Context, channel: Int) {
@@ -462,10 +476,11 @@ object AirPlayPersistence {
             .putString("existing_wifi_interface", interfaceName.trim()).apply()
     }
 
+    /** Until the driver edits them, the CN build ships a ready-to-use car hotspot. */
     fun loadManualHotspotSsid(context: Context): String =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getString(KEY_MANUAL_HOTSPOT_SSID, null)
-            .orEmpty()
+            ?: DEFAULT_HOTSPOT_SSID
 
     fun saveManualHotspotSsid(context: Context, ssid: String) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
@@ -476,7 +491,7 @@ object AirPlayPersistence {
     fun loadManualHotspotPassphrase(context: Context): String =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getString(KEY_MANUAL_HOTSPOT_PASSPHRASE, null)
-            .orEmpty()
+            ?: DEFAULT_HOTSPOT_PASSPHRASE
 
     fun saveManualHotspotPassphrase(context: Context, passphrase: String) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
@@ -604,7 +619,7 @@ object AirPlayPersistence {
 
     fun loadLocationReportingEnabled(context: Context): Boolean =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getBoolean(KEY_LOCATION_REPORTING_ENABLED, false)
+            .getBoolean(KEY_LOCATION_REPORTING_ENABLED, true)
 
     fun saveLocationReportingEnabled(context: Context, enabled: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
@@ -702,7 +717,7 @@ object AirPlayPersistence {
     /** Music buffer for the session's transport. Wireless and wired USB have separate settings. */
     fun loadMediaBufferMillis(context: Context, wireless: Boolean): Int {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val shared = prefs.getInt(KEY_MEDIA_BUFFER_MS, com.shilapi.xcertplay.media.MediaAudioBuffer.DEFAULT_MILLIS)
+        val shared = prefs.getInt(KEY_MEDIA_BUFFER_MS, com.shilapi.xcertplay.media.MediaAudioBuffer.MOST_STABLE_MILLIS)
         return if (wireless) {
             com.shilapi.xcertplay.media.MediaAudioBuffer.sanitizeWireless(shared)
         } else {
@@ -1411,7 +1426,7 @@ object AirPlayPersistence {
 
     fun loadHideTopBar(context: Context): Boolean =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getBoolean(KEY_HIDE_TOP_BAR, true)
+            .getBoolean(KEY_HIDE_TOP_BAR, false)
 
     fun saveHideTopBar(context: Context, hide: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
@@ -1421,7 +1436,7 @@ object AirPlayPersistence {
 
     fun loadHideBottomBar(context: Context): Boolean =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getBoolean(KEY_HIDE_BOTTOM_BAR, true)
+            .getBoolean(KEY_HIDE_BOTTOM_BAR, false)
 
     fun saveHideBottomBar(context: Context, hide: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()

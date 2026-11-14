@@ -66,8 +66,8 @@ enum class DiLinkGeneration(val key: String) {
 
         fun confirmed(context: Context): DiLinkGeneration? = fromKey(prefs(context).getString(KEY, null))
 
-        /** The driver's confirmed choice, or the detected generation when they have not picked one. */
-        fun current(context: Context): DiLinkGeneration = confirmed(context) ?: detect().generation
+        /** Defaults to DiLink 3.0 in the CN build; the driver's confirmed choice wins. */
+        fun current(context: Context): DiLinkGeneration = confirmed(context) ?: DILINK_3
 
         fun save(context: Context, generation: DiLinkGeneration) {
             prefs(context).edit().putString(KEY, generation.key).apply()

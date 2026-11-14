@@ -214,7 +214,9 @@ class BydVehicleFieldStoreTest {
         })
     }
 
-    @Test fun freshInstallUsesTheDefaultDiLink5Commands() {
+    @Test fun freshInstallDefaultsToTheLegacyProbeUntilItIsSwitchedBack() {
+        assertTrue(BydOutputSettings.legacyVehicleProbe(context))
+        BydOutputSettings.setLegacyVehicleProbe(context, false)
         assertFalse(BydOutputSettings.legacyVehicleProbe(context))
         assertEquals(BydWheelSpeed.SPEED, BydWheelSpeed.speedCommand(context))
         assertEquals(BydWheelSpeed.GEAR, BydWheelSpeed.gearCommand(context))

@@ -24,7 +24,10 @@ class HotspotProvisioningLogTest {
         CarHotspotSettings.setConfigWrite(app, true)
     }
 
-    @Test fun provisioningAHotspotDoesNotLogItsName() {
+    @Test fun anEmptySavedNameIsProvisionedWithoutLoggingTheResult() {
+        // The CN build ships "car"/"12341234" as defaults, so provisioning only happens once the
+        // driver clears the name.
+        AirPlayPersistence.saveManualHotspotSsid(app, "")
         val activity = Robolectric.buildActivity(DiPlayActivity::class.java).get()
         DiPlayActivity::class.java.getDeclaredMethod("launchHotspotCredentials")
             .apply { isAccessible = true }.invoke(activity)

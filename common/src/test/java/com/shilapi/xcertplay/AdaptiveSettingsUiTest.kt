@@ -304,6 +304,9 @@ class AdaptiveSettingsUiTest {
     @Test fun chosenPhoneWithMissingManualHotspotOffersConnectionSetup() {
         AirPlayPersistence.saveWirelessEnabled(context, true)
         AirPlayPersistence.saveWirelessHotspotMode(context, WirelessHotspotMode.MANUAL)
+        // The CN build ships ready-made hotspot details; this case is about missing ones.
+        AirPlayPersistence.saveManualHotspotSsid(context, "")
+        AirPlayPersistence.saveManualHotspotPassphrase(context, "")
         DiPlayPreferences.savePhone(context, "AA:BB:CC:DD:EE:FF", "My iPhone")
         val screen = openSettings()
         ReflectionHelpers.setField(screen, "setupError", null)

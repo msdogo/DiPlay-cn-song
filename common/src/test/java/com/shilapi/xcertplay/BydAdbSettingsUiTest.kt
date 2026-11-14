@@ -52,6 +52,8 @@ class BydAdbSettingsUiTest {
         activity = Robolectric.buildActivity(DiPlayActivity::class.java).get()
         activity.setTheme(android.R.style.Theme_Material_NoActionBar)
         AirPlayPersistence.saveWirelessHotspotMode(activity, WirelessHotspotMode.MANUAL)
+        // The CN build defaults to the legacy probe; these cases cover the built-in DiLink 5.0 settings.
+        BydOutputSettings.setLegacyVehicleProbe(activity, false)
         controls = LinearLayout(activity)
         assertTrue(CarHotspotSetup.isBydHeadUnit(activity))
         assertFalse(BydOutputSettings.navigationAvailable(activity))
@@ -63,7 +65,7 @@ class BydAdbSettingsUiTest {
         val page = LinearLayout(activity).apply { addView(controls); addView(advanced) }
         assertEquals(View.VISIBLE, controls.visibility)
         assertEquals(1, switches(controls).size)
-        assertFalse(CarHotspotSettings.enabled(activity))
+        assertTrue(CarHotspotSettings.enabled(activity))
         for (id in listOf(R.string.car_battery_for_the_iphone, R.string.wheel_speed_for_tunnels,
             R.string.video_while_parked, R.string.auto_car_hotspot_title)) {
             assertEquals(1, switches(page).count { it.contentDescription == activity.getString(id) })
@@ -174,7 +176,7 @@ class BydAdbSettingsUiTest {
             it.text.startsWith(activity.getString(R.string.vehicle_data_mode) + " · ")
         }.isEnabled)
         assertFalse(BydOutputSettings.legacyVehicleProbe(activity))
-        assertFalse(BydOutputSettings.batteryToIphone(activity))
+        assertTrue(BydOutputSettings.batteryToIphone(activity))
     }
 
     private fun advancedVehicleData() = LinearLayout(activity).also {

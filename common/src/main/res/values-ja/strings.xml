@@ -330,14 +330,14 @@
     <string name="right_hand_drive">右ハンドル</string>
     <string name="running">実行中</string>
     <string name="s_0_3x">0.3倍</string>
-    <string name="s_1000_ms_most_stable">1000 ms · 最も安定</string>
+    <string name="s_1000_ms_most_stable">1000 ms · 標準</string>
     <string name="s_1_0x">1.0倍</string>
     <string name="s_1_choose_your_connection">1 · 接続方法を選択</string>
     <string name="s_1_connect_a_computer_with_adb_installed_to_the_car_using">1. ADBをインストールしたパソコンを、既存のUSBまたは無線デバッグ接続で車載端末につなぎます。車載端末に確認が表示されたらデバッグを許可します。\n\n2. パソコンのターミナルで次のコマンドを実行します。</string>
     <string name="s_1_open_car_hotspot_settings_turn_the_hotspot_on_and_sele">1. 車のホットスポット設定を開き、オンにして、可能なら5 GHzを選びます。\n2. ネットワーク名とパスワードを下へ正確に入力します。\n3. 接続するときもホットスポットをオンにしてください。DiPlayがBluetooth経由で接続情報を送り、iPhoneは自動的に参加します。</string>
     <string name="s_2_4_ghz">2.4 GHz</string>
     <string name="s_2_pair_your_iphone">2 · iPhoneをペアリング</string>
-    <string name="s_300_ms_default">300 ms · 標準</string>
+    <string name="s_300_ms_default">300 ms</string>
     <string name="s_30_fps_lighter_load">30 fps · 負荷が軽い</string>
     <string name="s_3_connect">3 · 接続</string>
     <string name="s_3_tap_check_and_enable_below_this_enables_the_cluster_ma">3. 下の「確認して有効化」をタップします。メーター内地図とテーマの自動追従が有効になります。接続中のCarPlayは1回再接続します。</string>
@@ -568,7 +568,7 @@
     <string name="hide_advanced_vehicle_data">高度な車両データを非表示</string>
     <string name="advanced_vehicle_data_description">DiLink 5.0の標準データ経路を使うか、古い車載端末の項目を検出するか選択できます。車両には何も書き込みません。</string>
     <string name="vehicle_data_mode">車両データモード</string>
-    <string name="vehicle_data_mode_default">標準モード · DiLink 5.0で検証済み</string>
+    <string name="vehicle_data_mode_default">内蔵モード · DiLink 5.0で検証済み</string>
     <string name="vehicle_data_mode_legacy">旧型車載端末の検出 · コントローラー13／DiLink 3.0で試験済み</string>
     <string name="adb_not_checked">ADBはまだ確認していません。</string>
     <string name="vehicle_probe_saved_automatic">車両の機能情報を保存しました。必要なADBの検証と再検出を自動で実行します。</string>
@@ -693,6 +693,7 @@
     <string name="wheel_map_zoom_description">BYDのカスタムキーで、メーターにCarPlay地図を表示している間、音量キーの操作を「音量調整」と「地図の拡大・縮小」で切り替えます。通話中は常に音量調整を優先します。車種によってはセンターコンソールの音量操作も同じキーを送るため、拡大・縮小モードでは地図が拡大・縮小されます。DiPlayのステアリングスイッチサービスを使用し、メーターへの案内表示にはADBが必要です。</string>
     <string name="wheel_keys_service_on">ステアリングスイッチサービス：オン</string>
     <string name="wheel_keys_service_starting">ステアリングスイッチサービス：許可済み、起動中…</string>
+<string name="wheel_keys_service_crashed">車載機はこのサービスをクラッシュとして記録しているため、まだ起動しない場合があります。</string>
     <string name="wheel_keys_service_off">ステアリングスイッチサービス：オフ</string>
     <string name="wheel_keys_enable_adb">ステアリングスイッチサービスをオン · ADB</string>
     <string name="wheel_keys_adb_failed">ADBが使用できません：%1$s</string>

@@ -33,7 +33,16 @@ class AmbientMusicSettingsUiTest {
         activity.setTheme(android.R.style.Theme_Material_NoActionBar)
     }
 
+    /** The CN build ships ambient lighting on; these dialogs are driven from an off draft. */
+    private fun seedLightingOff() {
+        activity.getSharedPreferences("ambient_music", 0).edit()
+            .putBoolean("enabled", false)
+            .putString("colorSource", "SELECTED")
+            .commit()
+    }
+
     @Test fun cancelDoesNotApplyAnEnabledDraftOrCheckAccess() {
+        seedLightingOff()
         activity.ambientSupportCheck = { fail("Cancel must not start an access check"); CompletableFuture.completedFuture(false) }
         val dialog = open()
         enableSwitch(dialog).isChecked = true
@@ -43,6 +52,7 @@ class AmbientMusicSettingsUiTest {
     }
 
     @Test fun albumSourceUsesExistingSaveAndCancelDraft() {
+        seedLightingOff()
         var dialog = open()
         albumSwitch(dialog).isChecked = true
         dialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick()
@@ -60,6 +70,7 @@ class AmbientMusicSettingsUiTest {
         .filterIsInstance<Switch>().single { it.contentDescription == activity.getString(R.string.settings_ambient_album) }
 
     @Test fun failedReadOnlyCheckLeavesControlDisabledAndExplainsWhy() {
+        seedLightingOff()
         var checks = 0
         activity.ambientSupportCheck = { checks++; CompletableFuture.completedFuture(false) }
         val dialog = open()
@@ -74,6 +85,7 @@ class AmbientMusicSettingsUiTest {
     }
 
     @Test fun canceledDialogIgnoresACompletedSupportCheck() {
+        seedLightingOff()
         val pending = CompletableFuture<Boolean>()
         activity.ambientSupportCheck = { pending }
         val dialog = open()

@@ -28,7 +28,7 @@ object BydOutputSettings {
     private const val KEY_FCE_CLUSTER = "fce_cluster_guidance_experimental"
     private const val KEY_OEM_CLUSTER_HOLD = "oem_cluster_hold"
     private const val KEY_LEGACY_VEHICLE_PROBE = "legacy_vehicle_probe"
-    const val DEFAULT_LOW_CHARGE_PERCENT = 20
+    const val DEFAULT_LOW_CHARGE_PERCENT = 25
     val lowChargePresets = listOf(10, 15, 20, 25, 30)
 
     fun enabled(context: Context): Boolean = prefs(context).getBoolean(KEY_ENABLED, true)
@@ -62,7 +62,7 @@ object BydOutputSettings {
         BydAmapAdapter.find { packageName -> installed(context, packageName) } == BydAmapAdapter.DILINK3
 
     /** Tell the iPhone the car's charge and range (needs ADB over network); applies on the next connection. */
-    fun batteryToIphone(context: Context): Boolean = prefs(context).getBoolean(KEY_BATTERY_TO_IPHONE, false)
+    fun batteryToIphone(context: Context): Boolean = prefs(context).getBoolean(KEY_BATTERY_TO_IPHONE, true)
 
     fun setBatteryToIphone(context: Context, enabled: Boolean) {
         prefs(context).edit().putBoolean(KEY_BATTERY_TO_IPHONE, enabled).commit()
@@ -76,14 +76,14 @@ object BydOutputSettings {
     fun chargingConnectors(context: Context): EvChargingConnectors =
         prefs(context).getString(KEY_CHARGING_CONNECTORS, null)
             ?.let { saved -> EvChargingConnectors.entries.firstOrNull { it.name == saved } }
-            ?: EvChargingConnectors.CCS2_TYPE2
+            ?: EvChargingConnectors.GB_T
 
     fun setChargingConnectors(context: Context, connectors: EvChargingConnectors) {
         prefs(context).edit().putString(KEY_CHARGING_CONNECTORS, connectors.name).commit()
     }
 
     /** Send wheel speed and gear with the car's GPS (needs ADB over network); applies on the next connection. */
-    fun wheelSpeedToIphone(context: Context): Boolean = prefs(context).getBoolean(KEY_WHEEL_SPEED_TO_IPHONE, false)
+    fun wheelSpeedToIphone(context: Context): Boolean = prefs(context).getBoolean(KEY_WHEEL_SPEED_TO_IPHONE, true)
 
     fun setWheelSpeedToIphone(context: Context, enabled: Boolean) {
         prefs(context).edit().putBoolean(KEY_WHEEL_SPEED_TO_IPHONE, enabled).commit()
@@ -92,7 +92,7 @@ object BydOutputSettings {
     fun wheelSpeedToIphoneActive(context: Context): Boolean =
         wheelSpeedToIphone(context) && supportedInSelectedMode(context) { it.motionSupported }
     /** Offer iOS 27 video in car, played only while the gear reads P (needs ADB over network). */
-    fun videoWhileParked(context: Context): Boolean = prefs(context).getBoolean(KEY_VIDEO_WHILE_PARKED, false)
+    fun videoWhileParked(context: Context): Boolean = prefs(context).getBoolean(KEY_VIDEO_WHILE_PARKED, true)
 
     fun setVideoWhileParked(context: Context, enabled: Boolean) {
         prefs(context).edit().putBoolean(KEY_VIDEO_WHILE_PARKED, enabled).commit()
@@ -124,7 +124,7 @@ object BydOutputSettings {
 
     /** Unverified DiLink 3 call/voice/media key handling requires a separate explicit opt-in. */
     fun carPlayCallControls(context: Context): Boolean =
-        prefs(context).getBoolean(KEY_CARPLAY_CALL_CONTROLS, false)
+        prefs(context).getBoolean(KEY_CARPLAY_CALL_CONTROLS, true)
 
     fun setCarPlayCallControls(context: Context, enabled: Boolean) =
         prefs(context).edit().putBoolean(KEY_CARPLAY_CALL_CONTROLS, enabled).apply()
@@ -154,17 +154,11 @@ object BydOutputSettings {
         videoWhileParked(context) && supportedInSelectedMode(context) { it.gearSupported }
 
     /**
-     * Use addresses saved by the legacy head-unit probe. Existing installations with a saved probe
-     * migrate to this mode; a fresh installation stays on the default DiLink 5.0 path.
+     * Use addresses saved by the legacy head-unit probe. The CN build defaults to this mode; the
+     * driver can switch back to the built-in DiLink 5.0 addresses.
      */
-    fun legacyVehicleProbe(context: Context): Boolean {
-        val settings = prefs(context)
-        return if (settings.contains(KEY_LEGACY_VEHICLE_PROBE)) {
-            settings.getBoolean(KEY_LEGACY_VEHICLE_PROBE, false)
-        } else {
-            BydVehicleFieldStore.load(context) != null
-        }
-    }
+    fun legacyVehicleProbe(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_LEGACY_VEHICLE_PROBE, true)
 
     fun setLegacyVehicleProbe(context: Context, enabled: Boolean) {
         check(prefs(context).edit().putBoolean(KEY_LEGACY_VEHICLE_PROBE, enabled).commit()) {

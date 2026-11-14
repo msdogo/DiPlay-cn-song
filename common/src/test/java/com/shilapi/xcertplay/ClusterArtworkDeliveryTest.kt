@@ -27,6 +27,13 @@ class ClusterArtworkDeliveryTest {
     private fun set(name: String, value: Any?) = ReflectionHelpers.setField(CarPlayMediaKeys, name, value)
     private fun <T> field(name: String): T = ReflectionHelpers.getField(CarPlayMediaKeys, name)
 
+    // The CN build ships the ambient lights on and following the album cover, which would keep
+    // album recovery enabled on its own; these cases drive the cluster music switch.
+    @org.junit.Before fun clearAmbient() {
+        context.getSharedPreferences("ambient_music", 0).edit()
+            .putBoolean("enabled", false).putString("colorSource", "SELECTED").commit()
+    }
+
     @After fun clean() {
         CarPlayMediaKeys.detach(controller)
         context.getSharedPreferences("xcertplay_airplay", 0).edit().clear().commit()

@@ -95,10 +95,46 @@ class WheelMediaKeyWindowTest {
         verify(controller, never()).sendMediaButton(anyInt())
     }
 
-    @Test fun playPauseIsLeftAlone() {
-        // The wheel key service and BYD itself both own this key; the window must not take it.
-        assertFalse(host.dispatchKeyEvent(key(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, true)))
-        assertFalse(host.dispatchKeyEvent(key(CarPlayMediaButton.KEYCODE_BYD_AUTO_MEDIA_PLAY_PAUSE, true)))
+    @Test fun theWheelsOwnPlayPauseKeyReachesCarPlayWithoutTheService() {
+        // 293 is the DiLink 3 wheel's play/pause code and 113 is the label some firmware builds use
+        // for the same press. They are not standard keys, so the window can claim them for CarPlay.
+        assertTrue(host.dispatchKeyEvent(key(CarPlayMediaButton.KEYCODE_BYD_WHEEL_PLAY_PAUSE, true)))
+        assertTrue(host.dispatchKeyEvent(key(CarPlayMediaButton.KEYCODE_BYD_WHEEL_PLAY_PAUSE_ALT, true)))
+        verify(controller, times(2)).sendMediaButton(CarPlayMediaButton.PLAY_PAUSE)
+    }
+
+    @Test fun theWheelsPlayPauseKeySendsOnePressPerTap() {
+        assertTrue(host.dispatchKeyEvent(key(CarPlayMediaButton.KEYCODE_BYD_WHEEL_PLAY_PAUSE, true)))
+        assertTrue(host.dispatchKeyEvent(key(CarPlayMediaButton.KEYCODE_BYD_WHEEL_PLAY_PAUSE, true, repeat = 1)))
+        assertTrue(host.dispatchKeyEvent(key(CarPlayMediaButton.KEYCODE_BYD_WHEEL_PLAY_PAUSE, false)))
+        verify(controller, times(1)).sendMediaButton(anyInt())
+    }
+
+    @Test fun theWheelsPlayPauseKeyKeepsTheCarsOwnActionDuringACallAndWithoutASession() {
+        field("activeAirPlaySession", null)
+        assertFalse(host.dispatchKeyEvent(key(CarPlayMediaButton.KEYCODE_BYD_WHEEL_PLAY_PAUSE, true)))
+        field("activeAirPlaySession", mock(AirPlaySession::class.java))
+        BydCarPlayCall.onFrame(Iap2Messages.buildRaw(CarPlayCallState.CALL_STATE_UPDATE) {
+            u8(2, 4); string(4, "call")
+        })
+        assertFalse(host.dispatchKeyEvent(key(CarPlayMediaButton.KEYCODE_BYD_WHEEL_PLAY_PAUSE, true)))
+        verify(controller, never()).sendMediaButton(anyInt())
+    }
+
+    @Test fun everyPlayPauseCodeTheWheelCanSendReachesCarPlay() {
+        // Firmware rewrites the wheel's play/pause button differently, and the CarPlay screen is the
+        // only route left on a head unit where the wheel key service cannot be turned on.
+        for (keyCode in listOf(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_MEDIA_PLAY,
+            KeyEvent.KEYCODE_MEDIA_PAUSE, CarPlayMediaButton.KEYCODE_BYD_AUTO_MEDIA_PLAY_PAUSE,
+            CarPlayMediaButton.KEYCODE_BYD_AUTO_MEDIA_PLAY_PAUSE_DILINK3)) {
+            assertTrue("keyCode=$keyCode", host.dispatchKeyEvent(key(keyCode, true)))
+        }
+        verify(controller, times(5)).sendMediaButton(CarPlayMediaButton.PLAY_PAUSE)
+    }
+
+    @Test fun theKeysTheWindowDoesNotOwnStillReachTheCar() {
+        assertFalse(host.dispatchKeyEvent(key(KeyEvent.KEYCODE_VOLUME_UP, true)))
+        assertFalse(host.dispatchKeyEvent(key(KeyEvent.KEYCODE_MEDIA_STOP, true)))
         verify(controller, never()).sendMediaButton(anyInt())
     }
 
@@ -169,16 +205,13 @@ class WheelMediaKeyWindowTest {
             WheelZoomSettings.assign(host, WheelZoomSettings.Role.MEDIA_PLAY_PAUSE,
                 WheelKey(code, 0, "?"))
             assertFalse(WheelZoomSettings.isMediaPlayPauseKey(host, WheelKey(code, 0, "?")))
-            val consumed = host.dispatchKeyEvent(key(code, true))
-            if (code == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) {
-                assertFalse("dedicated play/pause belongs to Android MediaSession", consumed)
-            } else {
-                assertTrue("existing next/previous must still reach CarPlay", consumed)
-            }
+            // Every one of them is claimed by the CarPlay screen itself, so a remap cannot take
+            // them and the car's own action is not what a driver expects here.
+            assertTrue("keyCode=$code must still reach CarPlay", host.dispatchKeyEvent(key(code, true)))
         }
         verify(controller).sendMediaButton(CarPlayMediaButton.NEXT)
         verify(controller).sendMediaButton(CarPlayMediaButton.PREVIOUS)
-        verify(controller, never()).sendMediaButton(CarPlayMediaButton.PLAY_PAUSE)
+        verify(controller, times(1)).sendMediaButton(CarPlayMediaButton.PLAY_PAUSE)
     }
 
     @Test fun enablingMediaRemapWithoutAnAssignedKeyLeavesExistingTvControlsUnchanged() {

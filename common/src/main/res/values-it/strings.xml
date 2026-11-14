@@ -327,14 +327,14 @@
     <string name="right_hand_drive">Guida a destra</string>
     <string name="running">In esecuzione</string>
     <string name="s_0_3x">0,3x</string>
-    <string name="s_1000_ms_most_stable">1000 ms · più stabile</string>
+    <string name="s_1000_ms_most_stable">1000 ms · predefinito</string>
     <string name="s_1_0x">1,0x</string>
     <string name="s_1_choose_your_connection">1 · Scegli la connessione</string>
     <string name="s_1_connect_a_computer_with_adb_installed_to_the_car_using">1. Collega all’auto un computer con ADB installato, usando la connessione di debug USB o wireless già in uso. Approva il debug sull’auto se richiesto.\n\n2. Esegui questo comando nel terminale del computer:</string>
     <string name="s_1_open_car_hotspot_settings_turn_the_hotspot_on_and_sele">1. Apri le impostazioni dell’hotspot dell’auto, accendi l’hotspot e seleziona 5 GHz se disponibile.\n2. Copia qui sotto nome e password esattamente come sono.\n3. Lascia acceso l’hotspot dell’auto mentre ti connetti. DiPlay invia i dati via Bluetooth; l’iPhone si collega automaticamente.</string>
     <string name="s_2_4_ghz">2,4 GHz</string>
     <string name="s_2_pair_your_iphone">2 · Associa il tuo iPhone</string>
-    <string name="s_300_ms_default">300 ms · predefinito</string>
+    <string name="s_300_ms_default">300 ms</string>
     <string name="s_30_fps_lighter_load">30 fps · carico più leggero</string>
     <string name="s_3_connect">3 · Connetti</string>
     <string name="s_3_tap_check_and_enable_below_this_enables_the_cluster_ma">3. Tocca Verifica e attiva qui sotto. Questo abilita la mappa sul quadro strumenti e l’adattamento automatico del tema. Una sessione CarPlay attiva si riconnette una volta. Poi puoi scollegare il computer.</string>
@@ -563,7 +563,7 @@
     <string name="hide_advanced_vehicle_data">Nascondi dati avanzati del veicolo</string>
     <string name="advanced_vehicle_data_description">Scegli il percorso dati predefinito di DiLink 5.0 oppure rileva i campi su una head unit datata. Non viene scritto nulla sull’auto.</string>
     <string name="vehicle_data_mode">Modalità dati del veicolo</string>
-    <string name="vehicle_data_mode_default">Modalità predefinita · verificata su head unit DiLink 5.0</string>
+    <string name="vehicle_data_mode_default">Modalità integrata · verificata su head unit DiLink 5.0</string>
     <string name="vehicle_data_mode_legacy">Rilevamento head unit datata · testato su controller 13 / DiLink 3.0</string>
     <string name="adb_not_checked">ADB non è stato verificato.</string>
     <string name="vehicle_probe_saved_automatic">Le funzionalità del veicolo sono salvate. La convalida ADB in tempo reale e l’eventuale nuova sonda necessaria vengono eseguite automaticamente.</string>
@@ -672,6 +672,7 @@
     <string name="wheel_map_zoom_description">Il tasto personalizzabile di BYD fa passare i tasti del volume tra volume e zoom della mappa del cruscotto mentre il cruscotto mostra la mappa di CarPlay. Una chiamata mantiene sempre il volume. Su alcune auto il volume della console invia gli stessi tasti, quindi esegue lo zoom anche con lo zoom attivo. Usa il servizio dei tasti del volante di DiPlay; la nota sul cruscotto richiede ADB.</string>
     <string name="wheel_keys_service_on">Servizio tasti del volante: attivo</string>
     <string name="wheel_keys_service_starting">Servizio tasti del volante: consentito, in avvio…</string>
+<string name="wheel_keys_service_crashed">Il veicolo segnala il servizio come bloccato, quindi potrebbe non avviarsi ancora.</string>
     <string name="wheel_keys_service_off">Servizio tasti del volante: disattivato</string>
     <string name="wheel_keys_enable_adb">Attiva il servizio tasti del volante · ADB</string>
     <string name="wheel_keys_adb_failed">ADB non è disponibile: %1$s</string>

@@ -23,9 +23,11 @@ class AudioChannelPersistenceTest {
         prefs.edit().clear().apply()
     }
 
-    @Test fun freshInstallUsesAutomaticRouting() {
+    @Test fun freshInstallUsesTheBydNavigationStreamAndAutomaticMediaRouting() {
         assertEquals(0, AirPlayPersistence.loadMediaAudioChannel(context))
-        assertEquals(0, AirPlayPersistence.loadNavigationAudioChannel(context))
+        // BYD head units route guidance on legacy stream 14; media stays on usage routing.
+        assertEquals(14, AirPlayPersistence.loadNavigationAudioChannel(context))
+        assertFalse(prefs.contains("navigation_audio_channel"))
         org.junit.Assert.assertTrue(AirPlayPersistence.loadAudioFocusAutoYield(context))
     }
 
@@ -104,10 +106,10 @@ class AudioChannelPersistenceTest {
         assertEquals(20, AirPlayPersistence.loadNavigationAudioChannel(context))
     }
 
-    @Test fun unknownGenerationLeavesTheAutomaticDefaultUnstored() {
+    @Test fun unknownGenerationLeavesTheBuiltInDefaultUnstored() {
         assertFalse(SetupGuide.applyGenerationDefaults(context, DiLinkGeneration.UNKNOWN))
         assertFalse(prefs.contains("navigation_audio_channel"))
-        assertEquals(0, AirPlayPersistence.loadNavigationAudioChannel(context))
+        assertEquals(14, AirPlayPersistence.loadNavigationAudioChannel(context))
 
         assertTrue(SetupGuide.applyGenerationDefaults(context, DiLinkGeneration.DILINK_5))
         assertEquals(15, AirPlayPersistence.loadNavigationAudioChannel(context))

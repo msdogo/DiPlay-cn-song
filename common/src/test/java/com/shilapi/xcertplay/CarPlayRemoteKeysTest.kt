@@ -35,6 +35,12 @@ class CarPlayRemoteKeysTest {
             assertTrue("existing remote control changed for keycode $code",
                 CarPlayRemoteKeys.isProtectedNavigationKey(code))
         }
+        // The wheel's own play/pause button is claimed by the CarPlay window, so it must not be
+        // learned as a custom play/pause key as well: one tap would then send two presses.
+        assertTrue(CarPlayRemoteKeys.isProtectedNavigationKey(
+            com.shilapi.xcertplay.airplay.CarPlayMediaButton.KEYCODE_BYD_WHEEL_PLAY_PAUSE))
+        assertTrue(CarPlayRemoteKeys.isProtectedNavigationKey(
+            com.shilapi.xcertplay.airplay.CarPlayMediaButton.KEYCODE_BYD_WHEEL_PLAY_PAUSE_ALT))
         assertFalse(CarPlayRemoteKeys.isProtectedNavigationKey(KeyEvent.KEYCODE_F9))
     }
     @Test

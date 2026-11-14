@@ -325,14 +325,14 @@
     <string name="right_hand_drive">右舵</string>
     <string name="running">运行中</string>
     <string name="s_0_3x">0.3x</string>
-    <string name="s_1000_ms_most_stable">1000 毫秒 · 更稳定</string>
+    <string name="s_1000_ms_most_stable">1000 毫秒 · 默认</string>
     <string name="s_1_0x">1.0x</string>
     <string name="s_1_choose_your_connection">1 · 选择连接方式</string>
     <string name="s_1_connect_a_computer_with_adb_installed_to_the_car_using">1. 用装有 ADB 的电脑，通过现有的 USB 或无线调试连接连接到车机。如有调试授权提示请批准。\n\n2. 在电脑终端中运行此命令：</string>
     <string name="s_1_open_car_hotspot_settings_turn_the_hotspot_on_and_sele">1. 打开车机热点设置，开启热点，如有 5 GHz 请选择。\n2. 在下方准确复制热点名称和密码。\n3. 连接时保持车机热点开启。DiPlay 通过蓝牙发送热点信息，iPhone 会自动加入。</string>
     <string name="s_2_4_ghz">2.4 GHz</string>
     <string name="s_2_pair_your_iphone">2 · 配对你的 iPhone</string>
-    <string name="s_300_ms_default">300 毫秒 · 默认</string>
+    <string name="s_300_ms_default">300 毫秒</string>
     <string name="s_30_fps_lighter_load">30 帧/秒 · 减轻负载</string>
     <string name="s_3_connect">3 · 连接</string>
     <string name="s_3_tap_check_and_enable_below_this_enables_the_cluster_ma">3. 点击下方“检查并启用”。这将启用仪表盘地图和自动主题跟随。正在进行的 CarPlay 会话会重新连接一次，之后即可断开电脑。</string>
@@ -516,7 +516,7 @@
     <string name="hide_advanced_vehicle_data">收起高级车辆数据</string>
     <string name="advanced_vehicle_data_description">可使用 DiLink 5.0 默认数据读取，或探测旧版车机字段；所有操作均为只读。</string>
     <string name="vehicle_data_mode">车辆数据模式</string>
-    <string name="vehicle_data_mode_default">默认模式 · 已在 DiLink 5.0 车机验证</string>
+    <string name="vehicle_data_mode_default">内置模式 · 已在 DiLink 5.0 车机验证</string>
     <string name="vehicle_data_mode_legacy">旧版车机探测 · 已在 13 控制器 / DiLink 3.0 车机实测</string>
     <string name="adb_not_checked">尚未检测 ADB。</string>
     <string name="vehicle_probe_saved_automatic">车辆能力已保存；实时 ADB 验证和必要的重新探测会自动完成。</string>
@@ -642,6 +642,7 @@
     <string name="wheel_map_zoom_description">仪表盘显示 CarPlay 地图时，比亚迪自定义按键可在音量和仪表盘地图缩放之间切换音量键。通话时按键始终调节音量。部分车型的中控音量与方向盘发送相同按键，因此缩放模式下它也会缩放地图。使用 DiPlay 方向盘按键服务；仪表盘上的提示需要 ADB。</string>
     <string name="wheel_keys_service_on">方向盘按键服务：已开启</string>
     <string name="wheel_keys_service_starting">方向盘按键服务：已允许，正在启动…</string>
+<string name="wheel_keys_service_crashed">系统将该按键服务标记为已崩溃，可能暂时无法启动。</string>
     <string name="wheel_keys_service_off">方向盘按键服务：已关闭</string>
     <string name="wheel_keys_enable_adb">开启方向盘按键服务 · ADB</string>
     <string name="wheel_keys_adb_failed">ADB 不可用：%1$s</string>
