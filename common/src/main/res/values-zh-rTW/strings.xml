@@ -805,7 +805,7 @@
     <string name="check_for_updates">檢查更新</string>
     <string name="cn_changelog_missing">本包未附帶 CN 更新日誌。</string>
     <string name="cn_changelog_title">CN 各版更新日誌</string>
-    <string name="cn_features_body">相對官方 DiPlay，CN 額外提供：應用內檢查更新（0.2.10-cn.8 起）、四通道更新、開機自啟 ADB 修復、CarPlay 期間延遲暫停藍牙、自訂轉向卡（大小/透明度滑桿、晝夜玻璃、行程資訊條、重連不清卡）、儀表板地圖「更小更全」檔、不支援的車機語言預設簡體中文。</string>
+    <string name="cn_features_body">相對官方 DiPlay，CN 額外提供：應用內檢查更新（0.2.10-cn.8 起）、多通道更新、開機自啟 ADB 修復、CarPlay 期間延遲暫停藍牙、自訂轉向卡（大小/透明度滑桿、晝夜玻璃、行程資訊條、重連不清卡）、儀表板地圖「更小更全」檔、不支援的車機語言預設簡體中文。</string>
     <string name="cn_features_title">CN 特性</string>
     <string name="update_details_title">更新 %1$s</string>
     <string name="update_notes_missing">該版本沒有發布說明。</string>
@@ -814,7 +814,6 @@
     <string name="update_available">有新版本 %1$s（%2$s）。</string>
     <string name="update_available_no_size">有新版本 %1$s。</string>
     <string name="update_channel">更新通道</string>
-    <string name="update_channel_gitee">Gitee（國內）</string>
     <string name="update_channel_github">GitHub 直連</string>
     <string name="update_channel_mirror1">國內加速鏡像（gh-proxy.com）</string>
     <string name="update_channel_mirror2">國內加速鏡像（ghproxy.net）</string>

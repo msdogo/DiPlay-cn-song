@@ -5,7 +5,7 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
+import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -14,35 +14,33 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [29])
 class UpdateReleaseLookupTest {
-    @Test fun defaultChannelUsesCnGiteeReleaseAndKeepsItsApk() {
+    @Test fun theDefaultChannelAsksGithubAndKeepsItsApk() {
         val calls = mutableListOf<String>()
         val release = UpdateReleaseLookup.latest("0.2.17-cn.2", "DiPlay/test") { url ->
             calls.add(url.toString())
-            FakeConnection(url, gitee("v0.2.17-cn.3"))
+            FakeConnection(url, "[" + github("v0.2.17-cn.3") + "]")
         }
 
-        assertEquals(listOf(UpdateClient.GITEE_RELEASES_URL), calls)
+        assertEquals(listOf(UpdateClient.GITHUB_RELEASES_URL), calls)
         assertEquals("v0.2.17-cn.3", release?.tagName)
-        assertEquals("https://gitee.com/oneeyear/DiPlay-CN/releases/download/DiPlay-cn-v0.2.17-cn.3.apk", release?.apkUrl)
+        assertEquals(
+            "https://github.com/serein-morii/DiPlay-CN/releases/download/DiPlay-cn-v0.2.17-cn.3.apk",
+            release?.apkUrl,
+        )
     }
 
-    @Test fun fallsBackToCnGithubWhenGiteeIsBehind() {
-        val calls = mutableListOf<String>()
-        val release = UpdateReleaseLookup.latest("0.2.17-cn.2", "DiPlay/test") { url ->
-            calls.add(url.toString())
-            FakeConnection(url, if (url.host == "gitee.com") gitee("v0.2.17-cn.2")
-                else "[${gitee("v0.2.17-cn.3")}]" )
+    @Test fun nothingIsOfferedWhenTheInstalledBuildIsCurrent() {
+        val release = UpdateReleaseLookup.latest("0.2.17-cn.3", "DiPlay/test") { url ->
+            FakeConnection(url, "[" + github("v0.2.17-cn.3") + "]")
         }
-
-        assertEquals(listOf(UpdateClient.GITEE_RELEASES_URL, UpdateClient.GITHUB_RELEASES_URL), calls)
-        assertTrue(release!!.apkUrl.contains("v0.2.17-cn.3"))
+        assertNull(release)
     }
 
-    private fun gitee(tag: String): String = """{
+    private fun github(tag: String): String = """{
         "tag_name":"$tag",
         "assets":[
-          {"name":"DiPlay-cn-$tag.apk","browser_download_url":"https://gitee.com/oneeyear/DiPlay-CN/releases/download/DiPlay-cn-$tag.apk"},
-          {"name":"DiPlay-cn-$tag.apk.sha256","browser_download_url":"https://gitee.com/oneeyear/DiPlay-CN/releases/download/DiPlay-cn-$tag.apk.sha256"}
+          {"name":"DiPlay-cn-$tag.apk","browser_download_url":"https://github.com/serein-morii/DiPlay-CN/releases/download/DiPlay-cn-$tag.apk"},
+          {"name":"DiPlay-cn-$tag.apk.sha256","browser_download_url":"https://github.com/serein-morii/DiPlay-CN/releases/download/DiPlay-cn-$tag.apk.sha256"}
         ]
     }"""
 

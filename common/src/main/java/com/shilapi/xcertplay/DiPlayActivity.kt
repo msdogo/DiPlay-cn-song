@@ -2817,13 +2817,15 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
         section(content, getString(R.string.about_public_preview_prefix, version())) { card ->
             card.addView(label(getString(R.string.an_independent_carplay_receiver_for_android_head_units_wir), 17, TEXT))
             card.addView(updateRow())
+            // Gitee is gone; its old default value (1) falls back to the first option, GitHub.
+            val channels = listOf(0, 2, 3)
             choice(card, getString(R.string.update_channel), listOf(
                 getString(R.string.update_channel_github),
-                getString(R.string.update_channel_gitee),
                 getString(R.string.update_channel_mirror1),
                 getString(R.string.update_channel_mirror2),
-            ), AirPlayPersistence.loadUpdateChannel(this), reconnects = false) {
-                AirPlayPersistence.saveUpdateChannel(this, it)
+            ), channels.indexOf(AirPlayPersistence.loadUpdateChannel(this)).takeIf { it >= 0 } ?: 0,
+                reconnects = false) {
+                AirPlayPersistence.saveUpdateChannel(this, channels[it])
             }
             toggle(card, getString(R.string.settings_background_update_checks),
                 getString(R.string.settings_background_update_checks_description),

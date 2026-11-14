@@ -1699,12 +1699,14 @@ object AirPlayPersistence {
             .putBoolean(KEY_SWIPE_OPENS_FULL_SETTINGS, enabled).apply()
     }
 
+    // 0: GitHub, 2: gh-proxy.com, 3: ghproxy.net. The retired Gitee default (1) maps to GitHub.
     fun loadUpdateChannel(context: Context): Int =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getInt(KEY_UPDATE_CHANNEL, 1).coerceIn(0, 3)
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getInt(KEY_UPDATE_CHANNEL, 0)
+            .let { if (it == 2 || it == 3) it else 0 }
 
     fun saveUpdateChannel(context: Context, channel: Int) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putInt(KEY_UPDATE_CHANNEL, channel.coerceIn(0, 3)).apply()
+            .putInt(KEY_UPDATE_CHANNEL, if (channel == 2 || channel == 3) channel else 0).apply()
     }
 
     private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it.toInt() and 0xff) }

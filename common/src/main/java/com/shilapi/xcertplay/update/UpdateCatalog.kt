@@ -14,8 +14,8 @@ internal data class UpdateRelease(
 
 internal object UpdateCatalog {
     internal const val CHECKSUMS_FILE = "SHA256SUMS.txt"
-    // CN releases are mirrored on Gitee; the acceleration mirrors prefix a github.com URL at download time.
-    private val DOWNLOAD_HOSTS = setOf("github.com", "gitee.com")
+    // The acceleration mirrors prefix a github.com URL at download time.
+    private val DOWNLOAD_HOSTS = setOf("github.com")
     // The name becomes a file in the cache folder, so it can hold no path.
     private val APK_NAME = Regex("[A-Za-z0-9][A-Za-z0-9._-]*\\.apk")
 

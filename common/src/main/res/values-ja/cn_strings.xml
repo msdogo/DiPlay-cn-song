@@ -38,7 +38,6 @@
     <string name="update_available">新しいバージョン %1$s を利用できます（%2$s）。</string>
     <string name="update_available_no_size">新しいバージョン %1$s を利用できます。</string>
     <string name="update_channel">更新経路</string>
-    <string name="update_channel_gitee">Gitee（中国）</string>
     <string name="update_channel_github">GitHub から直接</string>
     <string name="update_channel_mirror1">高速ミラー（gh-proxy.com）</string>
     <string name="update_channel_mirror2">高速ミラー（ghproxy.net）</string>

@@ -9,8 +9,6 @@ import java.net.URL
 import java.net.URLConnection
 
 internal object UpdateClient {
-    internal const val GITEE_RELEASES_URL =
-        "https://gitee.com/api/v5/repos/oneeyear/DiPlay-CN/releases/latest"
     internal const val GITHUB_RELEASES_URL =
         "https://api.github.com/repos/serein-morii/DiPlay-CN/releases?per_page=5"
     private const val CONNECT_TIMEOUT_MILLIS = 10_000

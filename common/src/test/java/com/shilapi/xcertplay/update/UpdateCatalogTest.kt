@@ -71,16 +71,6 @@ class UpdateCatalogTest {
     }
 
     @Test
-    fun parsesGiteeLatestReleaseObject() {
-        val json = """{"tag_name":"v0.2.17-cn.3","assets":[
-            {"name":"DiPlay-cn-v0.2.17-cn.3.apk","browser_download_url":"${GITEE}v0.2.17-cn.3/DiPlay-cn-v0.2.17-cn.3.apk"},
-            {"name":"DiPlay-cn-v0.2.17-cn.3.apk.sha256","browser_download_url":"${GITEE}v0.2.17-cn.3/DiPlay-cn-v0.2.17-cn.3.apk.sha256"}
-        ]}"""
-        assertEquals("v0.2.17-cn.3", UpdateCatalog.parse(json)?.tagName)
-        assertEquals("${GITEE}v0.2.17-cn.3/DiPlay-cn-v0.2.17-cn.3.apk.sha256", UpdateCatalog.parse(json)?.checksumsUrl)
-    }
-
-    @Test
     fun acceptsHistoricalFourComponentCnTags() {
         val tag = "v0.2.8.5-cn.1"
         val json = """{"tag_name":"$tag","assets":[
@@ -122,12 +112,12 @@ class UpdateCatalogTest {
     }
 
     @Test
-    fun acceptsTheGiteeMirrorHost() {
-        val release = UpdateCatalog.parse(releaseWith(
+    fun refusesTheRetiredGiteeHost() {
+        // Gitee is no longer an update source, so its download URLs are not accepted either.
+        assertNull(UpdateCatalog.parse(releaseWith(
             apkUrl = "${GITEE}v0.2.22-cn.1/DiPlay-cn-v0.2.22-cn.1.apk",
             checksumsUrl = "${GITEE}v0.2.22-cn.1/DiPlay-cn-v0.2.22-cn.1.apk.sha256",
-        ))
-        assertEquals("${GITEE}v0.2.22-cn.1/DiPlay-cn-v0.2.22-cn.1.apk", release?.apkUrl)
+        )))
     }
 
     @Test
