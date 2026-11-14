@@ -1102,4 +1102,14 @@
     <string name="settings_side_view_camera_log">Camera log</string>
     <string name="settings_turn_camera_capture_mark_left">Це ЛІВА</string>
     <string name="settings_turn_camera_capture_mark_right">Це ПРАВА</string>
+
+    <!-- Settings file export and restore. -->
+    <string name="settings_export_to_downloads">Експорт налаштувань у «Завантаження»</string>
+    <string name="settings_import_from_file">Відновити з файлу</string>
+    <string name="settings_export_saved">Налаштування збережено в %1$s</string>
+    <string name="settings_export_failed">Не вдалося зберегти файл налаштувань</string>
+    <string name="settings_import_preview">Цей файл застосує налаштувань: %1$d, пропустить: %2$d.</string>
+    <string name="settings_import_confirm">Відновити ці налаштування?</string>
+    <string name="settings_import_unreadable">Цей файл не є резервною копією налаштувань DiPlay.</string>
+    <string name="backup_file_description">Збережіть копію цих налаштувань у «Завантаження» або відновіть їх із раніше збереженого файлу.</string>
 </resources>

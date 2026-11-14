@@ -1129,4 +1129,14 @@
     <string name="settings_side_view_camera_log">Camera log</string>
     <string name="settings_turn_camera_capture_mark_left">Questa è la SINISTRA</string>
     <string name="settings_turn_camera_capture_mark_right">Questa è la DESTRA</string>
+
+    <!-- Settings file export and restore. -->
+    <string name="settings_export_to_downloads">Esporta impostazioni in Download</string>
+    <string name="settings_import_from_file">Ripristina da un file</string>
+    <string name="settings_export_saved">Impostazioni salvate in %1$s</string>
+    <string name="settings_export_failed">Impossibile salvare il file delle impostazioni</string>
+    <string name="settings_import_preview">Questo file applica %1$d impostazioni e ne salta %2$d.</string>
+    <string name="settings_import_confirm">Ripristinare queste impostazioni?</string>
+    <string name="settings_import_unreadable">Questo file non è un backup delle impostazioni di DiPlay.</string>
+    <string name="backup_file_description">Salva una copia di queste impostazioni in Download o ripristinale da un file salvato in precedenza.</string>
 </resources>

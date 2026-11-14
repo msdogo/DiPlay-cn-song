@@ -1151,4 +1151,14 @@
     <string name="settings_side_view_camera_log">Camera log</string>
     <string name="settings_turn_camera_capture_mark_left">これは左側</string>
     <string name="settings_turn_camera_capture_mark_right">これは右側</string>
+
+    <!-- Settings file export and restore. -->
+    <string name="settings_export_to_downloads">設定をダウンロードに書き出す</string>
+    <string name="settings_import_from_file">ファイルから復元</string>
+    <string name="settings_export_saved">設定を %1$s に保存しました</string>
+    <string name="settings_export_failed">設定ファイルを保存できませんでした</string>
+    <string name="settings_import_preview">このファイルは %1$d 件の設定を適用し、%2$d 件をスキップします。</string>
+    <string name="settings_import_confirm">この設定を復元しますか？</string>
+    <string name="settings_import_unreadable">このファイルは DiPlay の設定バックアップではありません。</string>
+    <string name="backup_file_description">設定のコピーをダウンロードに保存するか、以前保存したファイルから復元します。</string>
 </resources>

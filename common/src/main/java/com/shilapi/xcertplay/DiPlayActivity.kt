@@ -53,8 +53,10 @@ import com.shilapi.xcertplay.airplay.CarPlayDisplayScale
 import com.shilapi.xcertplay.airplay.ClusterSpeedometerOverlay
 import com.shilapi.xcertplay.airplay.ClusterTurnCardOverlay
 import com.shilapi.xcertplay.backup.SettingsBackupCodec
+import com.shilapi.xcertplay.backup.SettingsPortableCodec
 import com.shilapi.xcertplay.backup.SettingsBackupEndpoint
 import com.shilapi.xcertplay.backup.SettingsBackupServer
+import com.shilapi.xcertplay.backup.SettingsFileStore
 import com.shilapi.xcertplay.backup.SettingsQrCode
 import com.shilapi.xcertplay.compat.closeCompat
 import com.shilapi.xcertplay.hud.BydAdbAccess
@@ -218,6 +220,8 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
     private var initialLaunch = true
     private var notificationTransport = true
     private var exportInProgress = false
+    /** One settings file export or restore at a time; both read and write the same preferences. */
+    private var settingsTransferInProgress = false
     private var usbPermissionOperation: UsbPermissionSetup.Operation? = null
     private var usbPermissionDialog: AlertDialog? = null
     internal var usbPermissionOperationFactory: (Context) -> UsbPermissionSetup.Operation = {
@@ -361,6 +365,12 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
     // A denial still saves the report, only in DiPlay's own storage.
     private val reportStoragePermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
         exportDiagnostics()
+    }
+    private val settingsImportPicker = registerForActivityResult(ActivityResultContracts.OpenDocument(), ::onSettingsFileChosen)
+    // Android 9: storage access puts the file in the visible Downloads/DiPlay folder. A denial still
+    // saves it, only in DiPlay's own storage.
+    private val settingsExportPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+        writeSettingsFile()
     }
 
     private var languagePreferenceAtCreate = AppLocale.SYSTEM
@@ -2815,6 +2825,18 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
         section(content, getString(R.string.backup_title)) { card ->
             card.addView(button(getString(R.string.backup_open), false) { openBackup() }, matchButton(0, 60))
             card.addView(label(getString(R.string.backup_open_description), 14, MUTED).apply { setPadding(0, dp(10), 0, 0) })
+            // A file backup needs no phone at all: the document travels through Downloads.
+            card.addView(label(getString(R.string.backup_file_description), 14, MUTED).apply {
+                setPadding(0, dp(SETTINGS_BLOCK_GAP_DP), 0, 0)
+            })
+            card.addView(
+                button(getString(R.string.settings_export_to_downloads), false) { exportSettingsToDownloads() },
+                matchButton(SETTINGS_BUTTON_GAP_DP, CONTROL_HEIGHT_DP),
+            )
+            card.addView(
+                button(getString(R.string.settings_import_from_file), false) { importSettingsFromFile() },
+                matchButton(SETTINGS_BUTTON_GAP_DP, CONTROL_HEIGHT_DP),
+            )
         }
         section(content, getString(R.string.made_possible_by_open_source)) { card ->
             card.addView(label(getString(R.string.receiver_based_on_xcertplay_licensed_under_gpl_3_0_diplay), 16, MUTED))
@@ -6344,6 +6366,93 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
                 }
             }
         }, "diplay-export").start()
+    }
+
+    private fun settingsExportFileName() =
+        "DiPlay-settings-" + SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date()) + ".json"
+
+    private fun exportSettingsToDownloads() {
+        if (settingsTransferInProgress) return
+        if (SettingsFileStore.needsStoragePermission(this)) {
+            // The same permission the report export asks for, and the same fallback when it is denied.
+            runCatching { settingsExportPermission.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE) }
+                .onFailure { writeSettingsFile() }
+        } else writeSettingsFile()
+    }
+
+    private fun writeSettingsFile() {
+        if (settingsTransferInProgress) return
+        settingsTransferInProgress = true
+        val appContext = applicationContext
+        val fileName = settingsExportFileName()
+        Thread({
+            val result = runCatching {
+                val document = SettingsPortableCodec.export(appContext, version())
+                SettingsFileStore.save(appContext, fileName, document) to document.size
+            }
+            runOnUiThread {
+                settingsTransferInProgress = false
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                result.onSuccess { (saved, _) ->
+                    // The visible Downloads folder is what the driver can find again without a file manager.
+                    toast(getString(R.string.settings_export_saved, saved.path ?: "Downloads/DiPlay/" + fileName))
+                }.onFailure { error ->
+                    Log.w("DiPlaySettings", "the settings file could not be written", error)
+                    toast(getString(R.string.settings_export_failed))
+                }
+            }
+        }, "diplay-settings-export").start()
+    }
+
+    private fun importSettingsFromFile() {
+        if (settingsTransferInProgress) return
+        // Any picker may rename the extension, so the document itself decides whether it is a backup.
+        runCatching { settingsImportPicker.launch(arrayOf("*/*")) }
+            .onFailure { toast(getString(R.string.settings_import_unreadable)) }
+    }
+
+    private fun onSettingsFileChosen(uri: Uri?) {
+        if (uri == null || settingsTransferInProgress) return
+        val appContext = applicationContext
+        Thread({
+            val document = SettingsFileStore.read(appContext, uri)
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                if (document == null) toast(getString(R.string.settings_import_unreadable))
+                else confirmAndImportSettings(document)
+            }
+        }, "diplay-settings-read").start()
+    }
+
+    /** Reads the document exactly as an import would, then asks before changing anything. */
+    private fun confirmAndImportSettings(document: ByteArray) {
+        val preview = SettingsPortableCodec.preview(this, document)
+        if (preview.invalid) { toast(getString(R.string.settings_import_unreadable)); return }
+        appDialogBuilder().setTitle(getString(R.string.settings_import_confirm))
+            .setMessage(getString(R.string.settings_import_preview, preview.applied, preview.skipped))
+            .setPositiveButton(getString(android.R.string.ok)) { _, _ -> applySettingsDocument(document) }
+            .setNegativeButton(getString(R.string.cancel), null).show()
+    }
+
+    private fun applySettingsDocument(document: ByteArray) {
+        if (settingsTransferInProgress) return
+        settingsTransferInProgress = true
+        val appContext = applicationContext
+        Thread({
+            val outcome = runCatching { SettingsPortableCodec.import(appContext, document) }.getOrNull()
+            runOnUiThread {
+                settingsTransferInProgress = false
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                if (outcome == null || outcome.invalid) {
+                    toast(getString(R.string.settings_import_unreadable))
+                    return@runOnUiThread
+                }
+                toast(getString(R.string.settings_import_preview, outcome.applied, outcome.skipped))
+                // Several settings only take effect on the next connection.
+                if (outcome.applied > 0) markReconnectNeeded()
+                render()
+            }
+        }, "diplay-settings-import").start()
     }
 
     /** The text of a diagnostic report. It reads the session logs, so call it off the main thread. */

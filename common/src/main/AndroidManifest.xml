@@ -15,6 +15,9 @@
     <!-- Optional: diagnostic reports in the visible Downloads/DiPlay folder on Android 9.
          Android 10+ needs no permission for this, so it is never requested there. -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+    <!-- Optional: reading a settings file from shared storage on Android 9. The system file picker
+         (used on every version) needs no permission. -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
     <!-- Optional: the dashboard map as a card over the home screen. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <!-- Optional, owner-enabled Usage Access for the verified DiLink 5.1 cluster profile. -->
@@ -52,6 +55,15 @@
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/diagnostic_report_paths" />
+        </provider>
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.settings-backups"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/settings_backup_paths" />
         </provider>
         <provider
             android:name="com.shilapi.xcertplay.update.UpdateApkProvider"

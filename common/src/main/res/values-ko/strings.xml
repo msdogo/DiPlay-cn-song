@@ -1050,4 +1050,14 @@
     <string name="connection_help_hotspot_interface_not_found">연결 설정에서 저장된 핫스팟 편집을 누르고 핫스팟 인터페이스(선택 사항)를 비운 뒤 다시 시도하세요.</string>
     <string name="connection_help_car_hotspot_off">차량 설정에서 차량 핫스팟을 켠 뒤 다시 시도하세요.</string>
     <string name="last_connection_attempt">마지막 연결 시도(%1$s): %2$s</string>
+
+    <!-- Settings file export and restore. -->
+    <string name="settings_export_to_downloads">설정을 다운로드로 내보내기</string>
+    <string name="settings_import_from_file">파일에서 복원</string>
+    <string name="settings_export_saved">설정을 %1$s에 저장했습니다</string>
+    <string name="settings_export_failed">설정 파일을 저장하지 못했습니다</string>
+    <string name="settings_import_preview">이 파일은 설정 %1$d개를 적용하고 %2$d개를 건너뜁니다.</string>
+    <string name="settings_import_confirm">이 설정을 복원할까요?</string>
+    <string name="settings_import_unreadable">이 파일은 DiPlay 설정 백업이 아닙니다.</string>
+    <string name="backup_file_description">이 설정의 사본을 다운로드에 저장하거나 이전에 저장한 파일에서 복원합니다.</string>
 </resources>
