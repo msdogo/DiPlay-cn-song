@@ -130,13 +130,13 @@ class UpdateCatalogTest {
     @Test
     fun refusesDownloadUrlsThatAreNotHttpsOnAKnownHost() {
         for (url in listOf(
-            "http://github.com/serein-morii/DiPlay-CN/releases/download/v0.2.22-cn.1/DiPlay-cn-v0.2.22-cn.1.apk",
+            "http://github.com/msdogo/DiPlay-cn-song/releases/download/v0.2.22-cn.1/DiPlay-cn-v0.2.22-cn.1.apk",
             "https://evil.example/DiPlay-cn-v0.2.22-cn.1.apk",
             "https://github.com.evil.example/DiPlay-cn-v0.2.22-cn.1.apk",
             "https://gitee.com.evil.example/DiPlay-cn-v0.2.22-cn.1.apk",
             "https://github.com@evil.example/DiPlay-cn-v0.2.22-cn.1.apk",
             "https://evil.example/github.com/DiPlay-cn-v0.2.22-cn.1.apk",
-            "https://github.com:8443/serein-morii/DiPlay-CN/DiPlay-cn-v0.2.22-cn.1.apk",
+            "https://github.com:8443/msdogo/DiPlay-cn-song/DiPlay-cn-v0.2.22-cn.1.apk",
             "file:///sdcard/DiPlay-cn-v0.2.22-cn.1.apk",
             "ftp://github.com/DiPlay-cn-v0.2.22-cn.1.apk",
         )) {
@@ -146,7 +146,7 @@ class UpdateCatalogTest {
     }
 
     private companion object {
-        const val GITHUB = "https://github.com/serein-morii/DiPlay-CN/releases/download/"
+        const val GITHUB = "https://github.com/msdogo/DiPlay-cn-song/releases/download/"
         const val GITEE = "https://gitee.com/oneeyear/DiPlay-CN/releases/download/"
     }
 }
