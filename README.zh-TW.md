@@ -5,6 +5,8 @@
 為相容的比亞迪 Android 車機提供有線與無線 CarPlay，採用熟悉的 DiAuto 介面。此 CN 社群版本的套件名稱為 `com.shihab.diplay.cn`，可與官方 DiPlay 並存。
 
 > 專案以比亞迪汽車為主要支援對象。其他品牌可能可以執行，但不在一般支援範圍內；特定韌體的個別整合不代表整個品牌受到支援。
+>
+> **主要開發與測試車輛：比亞迪宋 Plus DM-i，車機 DiLink 3.0。** CN 預設值與實車檢查皆以此車機為準；其他車型與車機系統不保證所有功能可用。請自行測試，或取用原始碼依本車修改。
 
 [下載 CN 版本](https://github.com/serein-morii/DiPlay-CN/releases/latest) · [Gitee 國內下載](https://gitee.com/oneeyear/DiPlay-CN/releases/latest) · [回報 CN 問題](https://github.com/serein-morii/DiPlay-CN/issues/new)
 

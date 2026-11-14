@@ -8,7 +8,7 @@
 
 > 这些项目专注于比亚迪汽车。它们可能在其他品牌上运行，但其他品牌不在支持范围内，也没有增加支持或修复其品牌特定兼容性问题的计划。
 >
-> **测试车辆：2025 款比亚迪汉 DM-i，车机 DiLink 5.0。** 其他车型、其他车机系统不保证所有功能可用。请自行测试，或拉取源代码按本车修改。
+> **主要开发与测试车辆：比亚迪宋 Plus DM-i，车机 DiLink 3.0。** CN 默认值与实车验证都针对这台车机。其他车型、其他车机系统不保证所有功能可用。请自行测试，或拉取源代码按本车修改。
 
 [下载最新版](https://github.com/serein-morii/DiPlay-CN/releases/latest) · [Gitee 国内下载](https://gitee.com/oneeyear/DiPlay-CN/releases/latest) · [CN 优化日志](docs/CN_OPTIMIZATIONS.md) · [全部发版](https://github.com/serein-morii/DiPlay-CN/releases) · [完整说明](README.md)
 
