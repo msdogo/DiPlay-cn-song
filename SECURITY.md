@@ -1,4 +1,12 @@
-# CN APK signing limitation / CN 安装包签名限制
+# Signing / 签名
+
+## com.diplay.song (current build)
+
+This build uses package `com.diplay.song` and its own key, `signing/diplay-song.jks` (alias `diplaysong`). It cannot replace, and cannot be replaced by, an installation of `com.shihab.diplay.cn`; the two coexist. Because the key file is still committed to this repository, the same caveat as below applies: a matching signature proves nothing about who built an APK.
+
+当前构建使用包名 `com.diplay.song` 和自己的密钥 `signing/diplay-song.jks`（别名 `diplaysong`）。它与 `com.shihab.diplay.cn` 互不覆盖，可以并存。密钥文件仍提交在仓库里，因此下面那条限制同样适用：签名一致并不证明 APK 的来源。
+
+## Legacy CN APK signing limitation / 旧 CN 安装包签名限制
 
 The CN Android release signing keystore and its password are committed in this public repository to keep existing `com.shihab.diplay.cn` installations upgradeable. **This key is not secret.** Anyone can use it to sign an APK that Android considers an update to the CN app. Android's matching-signature check therefore does not authenticate the publisher of a CN APK.
 

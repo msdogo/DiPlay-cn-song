@@ -4,7 +4,7 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md)
 
-為相容的比亞迪 Android 車機提供有線與無線 CarPlay，採用熟悉的 DiAuto 介面。此 CN 社群版本的套件名稱為 `com.shihab.diplay.cn`，可與官方 DiPlay 並存。
+為相容的比亞迪 Android 車機提供有線與無線 CarPlay，採用熟悉的 DiAuto 介面。此建置版本的套件名稱為 `com.diplay.song`（舊版為 `com.shihab.diplay.cn`，新套件不再覆蓋它），可與官方 DiPlay 並存。
 
 > 專案以比亞迪汽車為主要支援對象。其他品牌可能可以執行，但不在一般支援範圍內；特定韌體的個別整合不代表整個品牌受到支援。
 >

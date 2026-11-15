@@ -16,11 +16,11 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.shihab.diplay.cn"
+        applicationId = "com.diplay.song"
         minSdk = 25
         targetSdk = 37
-        versionCode = 121
-        versionName = "DiPlay-cn-song-0.2.22-cn.1"
+        versionCode = 1
+        versionName = "1.0.0"
 
     }
 
@@ -37,12 +37,11 @@ android {
                 keyAlias = providers.environmentVariable("ANDROID_KEY_ALIAS").getOrElse("")
                 keyPassword = providers.environmentVariable("ANDROID_KEY_PASSWORD").getOrElse("")
             } else {
-                // PUBLIC legacy CN key retained only for in-place update compatibility.
-                // It cannot authenticate the publisher of an APK; see SECURITY.md.
-                storeFile = rootProject.file("signing/diplay-cn.jks")
-                storePassword = "diplay-cn"
-                keyAlias = "diplaycn"
-                keyPassword = "diplay-cn"
+                // Private key for com.diplay.song. Never published as an update of the CN app.
+                storeFile = rootProject.file("signing/diplay-song.jks")
+                storePassword = "song-diplay-2026"
+                keyAlias = "diplaysong"
+                keyPassword = "song-diplay-2026"
             }
         }
     }

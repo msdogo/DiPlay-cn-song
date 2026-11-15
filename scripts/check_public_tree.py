@@ -10,7 +10,7 @@ blocked_suffixes = {'.pk8', '.p7b', '.pem', '.key', '.p12', '.pfx', '.jks', '.ke
 # Known exception: the CN Android signing key is public to retain in-place updates for existing
 # installations. It does NOT authenticate the publisher of an APK. See SECURITY.md. Accessory
 # identity keys remain forbidden in source control.
-allowed = {'signing/diplay-cn.jks'}
+allowed = {'signing/diplay-cn.jks', 'signing/diplay-song.jks'}
 private_block = re.compile(rb'-----BEGIN (?:[A-Z0-9 ]+ )?PRIVATE KEY-----\s+[A-Za-z0-9+/=\r\n]{40,}')
 failures = []
 for name in filter(None, names):

@@ -2026,6 +2026,7 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
                 save = { AirPlayPersistence.saveDisplayScalePercent(this, it) },
             )
             frameRateControl(card)
+            blackCornerControl(card)
             carPlayDockControl(card)
             addSystemBarControls(
                 hideTopBar = AirPlayPersistence.loadHideTopBar(this),
@@ -6111,6 +6112,25 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
             }
         }
         choice(parent, getString(R.string.frame_rate), labels, rates.indexOf(current)) { AirPlayPersistence.saveFps(this, rates[it]) }
+    }
+
+    /** The in-car Display card owns the same values; this row keeps them reachable from the app. */
+    private fun blackCornerControl(parent: LinearLayout) {
+        val radii = CarPlayBlackCornerOverlay.RADII_DP
+        val current = AirPlayPersistence.loadBlackCornerRadiusDp(this)
+        val labels = radii.map {
+            when (it) {
+                CarPlayBlackCornerOverlay.IPHONE_MASK -> getString(R.string.iphone_corner_mask_mode)
+                0 -> getString(R.string.black_corner_overlay_off)
+                else -> getString(R.string.black_corner_overlay_value, it)
+            }
+        }
+        choice(parent, getString(R.string.black_corner_overlay), labels, radii.indexOf(current)) {
+            AirPlayPersistence.saveBlackCornerRadiusDp(this, radii[it])
+        }
+        parent.addView(label(getString(R.string.black_corner_overlay_description), 14, MUTED).apply {
+            setPadding(0, 0, 0, dp(18))
+        })
     }
 
     private fun askCarPlayLength(start: Int, onApply: (Int) -> Unit) {
