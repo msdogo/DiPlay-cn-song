@@ -47,7 +47,7 @@ internal object BydClusterBridge {
             }
         }
         available = adapter != null
-        if (!available && (appContext.packageName.endsWith(".hudtest") || appContext.packageName.endsWith(".cn"))) {
+        if (!available && appContext.packageName in FACTORY_NAVIGATION_PACKAGES) {
             factory = BydFactoryNavigationOutput(appContext.applicationContext)
             available = true
         }

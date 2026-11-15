@@ -4,6 +4,17 @@ import android.content.Context
 import android.util.Log
 import java.lang.reflect.InvocationTargetException
 
+/**
+ * Packages allowed to drive the factory instrument SDK directly with the app's own identity. These are the
+ * builds this path was qualified on; every other package name falls back to the broadcast adapters only.
+ */
+internal val FACTORY_NAVIGATION_PACKAGES = setOf(
+    "com.andrerinas.headunitrevived.bydhudtest",
+    "com.shihab.diplay.hudtest",
+    "com.shihab.diplay.cn",
+    "com.diplay.song",
+)
+
 /** Temporary HUD-test output using the installed factory SDK and the app's own identity. */
 internal class BydFactoryNavigationOutput(private val context: Context) {
     private var device: Any? = null
@@ -12,7 +23,7 @@ internal class BydFactoryNavigationOutput(private val context: Context) {
     private var logged = false
 
     fun update(icon: Int, exit: Int, distance: Int) {
-        if (disabled || !(context.packageName.endsWith(".bydhudtest") || context.packageName.endsWith(".hudtest") || context.packageName.endsWith(".cn"))) return
+        if (disabled || context.packageName !in FACTORY_NAVIGATION_PACKAGES) return
         val turn = BydFactoryTurnCode.map(icon, exit) ?: run { clear(); return }
         if (distance !in 0..16777214) { clear(); return }
         try {

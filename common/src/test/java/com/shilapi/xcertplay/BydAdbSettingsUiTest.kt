@@ -154,14 +154,21 @@ class BydAdbSettingsUiTest {
         }
     }
 
-    @Test fun unavailableHotspotAdbDoesNotHideTheVehicleModeOrItsSavedSwitches() {
+    @Test fun unavailableHotspotAdbStillShowsTheSwitchAndSaysWhy() {
         BydOutputSettings.setBatteryToIphone(activity, true)
         for (access in listOf(LocalAdb.Access.UNREACHABLE, LocalAdb.Access.UNSUPPORTED)) {
             render(LocalAdb.Access.READY)
             render(access)
-            assertEquals(View.GONE, controls.visibility)
-            assertEquals(0, controls.childCount)
-            assertNull(ReflectionHelpers.getField<TextView?>(activity, "adbStatus"))
+            // The owner must be able to find "start the car hotspot automatically" even when ADB is
+            // not answering, so the card stays and the status sentence carries the reason.
+            assertEquals(View.VISIBLE, controls.visibility)
+            assertEquals(1, switches(controls).size)
+            assertTrue(CarHotspotSettings.enabled(activity))
+            val status = ReflectionHelpers.getField<TextView?>(activity, "adbStatus")
+            assertNotNull(status)
+            val expected = if (access == LocalAdb.Access.UNSUPPORTED) listOf(R.string.adb_pairing_only)
+                else listOf(R.string.adb_off, R.string.adb_network_not_answering)
+            assertTrue(labels(controls).any { it in expected.map(activity::getString) })
             assertTrue(switches(advancedVehicleData()).single {
                 it.contentDescription == activity.getString(R.string.car_battery_for_the_iphone)
             }.isChecked)

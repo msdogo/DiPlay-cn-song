@@ -3300,8 +3300,12 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
                     if (!it) startupHotspotCancelled = true
                 }
             }
-            adbStatus = label(getString(if (access == LocalAdb.Access.READY)
-                R.string.adb_access_ready else R.string.adb_not_approved), 14, MUTED).also(card::addView)
+            adbStatus = label(getString(when (access) {
+                LocalAdb.Access.READY -> R.string.adb_access_ready
+                LocalAdb.Access.NOT_APPROVED -> R.string.adb_not_approved
+                LocalAdb.Access.UNREACHABLE -> adbOffText()
+                LocalAdb.Access.UNSUPPORTED -> R.string.adb_pairing_only
+            }), 14, if (access == LocalAdb.Access.READY) MUTED else WARNING).also(card::addView)
             val allReady = UsbPermissionSetup.snapshot(this).values.all { it }
             if (!allReady) {
                 card.addView(button(getString(R.string.btn_auto_apply_permissions), false) { autoApplyPermissions() }, matchButton(8, 54))

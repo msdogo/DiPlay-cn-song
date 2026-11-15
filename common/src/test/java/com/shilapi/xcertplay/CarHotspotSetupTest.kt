@@ -47,7 +47,8 @@ class CarHotspotSetupTest {
         assertFalse(BydOutputSettings.navigationAvailable(context))
         assertTrue(CarHotspotSetup.isBydHeadUnit(context))
         assertTrue(CarHotspotSettings.visible(CarHotspotSetup.isBydHeadUnit(context), LocalAdb.Access.NOT_APPROVED))
-        assertFalse(CarHotspotSettings.visible(CarHotspotSetup.isBydHeadUnit(context), LocalAdb.Access.UNREACHABLE))
+        // ADB being unreachable hides nothing: the owner still has to find the switch.
+        assertTrue(CarHotspotSettings.visible(CarHotspotSetup.isBydHeadUnit(context), LocalAdb.Access.UNREACHABLE))
     }
 
     @Test fun userInstalledLookalikeDoesNotIdentifyABydHeadUnit() {
@@ -66,20 +67,17 @@ class CarHotspotSetupTest {
         assertTrue(CarHotspotSetup.isBydHeadUnit(context))
     }
 
-    @Test fun onlyBydWithSupportedAdbSeesTheSettingIncludingBeforeApproval() {
+    @Test fun onlyBydUnitsSeeTheSettingWhateverTheAdbStateIs() {
         for (access in LocalAdb.Access.entries) {
             assertFalse(CarHotspotSettings.visible(false, access))
+            assertTrue(CarHotspotSettings.visible(true, access))
         }
-        assertTrue(CarHotspotSettings.visible(true, LocalAdb.Access.NOT_APPROVED))
-        assertTrue(CarHotspotSettings.visible(true, LocalAdb.Access.READY))
-        assertFalse(CarHotspotSettings.visible(true, LocalAdb.Access.UNREACHABLE))
-        assertFalse(CarHotspotSettings.visible(true, LocalAdb.Access.UNSUPPORTED))
     }
 
-    @Test fun losingAdbHidesTheSettingWithoutClearingOrDisablingTheSavedChoice() {
+    @Test fun losingAdbKeepsTheSettingAndItsSavedChoice() {
         configureHotspot()
         CarHotspotSettings.setEnabled(context, true)
-        assertFalse(CarHotspotSettings.visible(true, LocalAdb.Access.UNREACHABLE))
+        assertTrue(CarHotspotSettings.visible(true, LocalAdb.Access.UNREACHABLE))
         assertTrue(CarHotspotSettings.enabled(context))
         assertTrue(eligible())
     }

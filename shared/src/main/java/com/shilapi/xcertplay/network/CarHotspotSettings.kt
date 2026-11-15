@@ -17,9 +17,11 @@ object CarHotspotSettings {
     fun setConfigWrite(context: Context, enabled: Boolean) =
         prefs(context).edit().putBoolean("config_write", enabled).apply()
 
-    // Visibility is independent of the saved choice: ADB is only needed to grant permission.
-    fun visible(bydAvailable: Boolean, access: LocalAdb.Access): Boolean =
-        bydAvailable && (access == LocalAdb.Access.READY || access == LocalAdb.Access.NOT_APPROVED)
+    // Visibility is independent of the saved choice and of ADB: the driver must be able to find the opt-in
+    // and read why ADB is unavailable, instead of the whole card disappearing. The access still decides
+    // whether turning it on can be done here or has to be done on the car screen.
+    @Suppress("UNUSED_PARAMETER")
+    fun visible(bydAvailable: Boolean, access: LocalAdb.Access): Boolean = bydAvailable
 
     fun shouldEnable(context: Context, wireless: Boolean, mode: WirelessHotspotMode): Boolean =
         enabled(context) && wireless && mode == WirelessHotspotMode.MANUAL
