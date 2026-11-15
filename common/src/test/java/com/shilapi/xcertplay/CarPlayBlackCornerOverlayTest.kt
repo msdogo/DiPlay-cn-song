@@ -73,13 +73,15 @@ class CarPlayBlackCornerOverlayTest {
         }
     }
 
-    @Test fun persistenceIsDisabledByDefaultAndRejectsUnknownRadius() {
-        assertEquals(0, AirPlayPersistence.loadBlackCornerRadiusDp(context))
+    @Test fun persistenceDefaultsToIphoneMaskAndRejectsUnknownRadius() {
+        assertEquals(CarPlayBlackCornerOverlay.IPHONE_MASK,
+            AirPlayPersistence.loadBlackCornerRadiusDp(context))
         AirPlayPersistence.saveBlackCornerRadiusDp(context, 36)
         assertEquals(36, AirPlayPersistence.loadBlackCornerRadiusDp(context))
         context.getSharedPreferences("xcertplay_airplay", 0).edit()
             .putInt("black_corner_radius_dp", 9999).apply()
-        assertEquals(0, AirPlayPersistence.loadBlackCornerRadiusDp(context))
+        assertEquals(CarPlayBlackCornerOverlay.IPHONE_MASK,
+            AirPlayPersistence.loadBlackCornerRadiusDp(context))
         AirPlayPersistence.saveBlackCornerRadiusDp(context, CarPlayBlackCornerOverlay.IPHONE_MASK)
         assertEquals(CarPlayBlackCornerOverlay.IPHONE_MASK,
             AirPlayPersistence.loadBlackCornerRadiusDp(context))

@@ -542,7 +542,7 @@ open class CarPlayHostActivity : ComponentActivity() {
     private var harmanFullscreenApplied = false
     private var safeAreaDrawOutside = true
     private var mainDisplayDisableSafeArea = false
-    private var blackCornerRadiusDp = 0
+    private var blackCornerRadiusDp = CarPlayBlackCornerOverlay.IPHONE_MASK
     private var locationReportingEnabled = false
     private var locationPermissionAvailable = false
     private var microphoneAvailable = false

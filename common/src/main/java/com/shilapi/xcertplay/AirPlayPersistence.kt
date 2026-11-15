@@ -1500,8 +1500,8 @@ object AirPlayPersistence {
     /** Local video overlay; does not alter the iPhone's display or safe-area negotiation. */
     fun loadBlackCornerRadiusDp(context: Context): Int =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getInt(KEY_BLACK_CORNER_RADIUS, 0)
-            .takeIf { it in CarPlayBlackCornerOverlay.RADII_DP } ?: 0
+            .getInt(KEY_BLACK_CORNER_RADIUS, CarPlayBlackCornerOverlay.IPHONE_MASK)
+            .takeIf { it in CarPlayBlackCornerOverlay.RADII_DP } ?: CarPlayBlackCornerOverlay.IPHONE_MASK
 
     fun saveBlackCornerRadiusDp(context: Context, value: Int) {
         require(value in CarPlayBlackCornerOverlay.RADII_DP)
