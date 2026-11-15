@@ -2079,7 +2079,7 @@ open class CarPlayHostActivity : ComponentActivity() {
             gravity = Gravity.CENTER
         }
         val icon = ImageView(this).apply {
-            setImageResource(R.drawable.ic_carplay)
+            setImageResource(R.drawable.ic_brand)
             contentDescription = getString(R.string.carplay)
         }
         panel.addView(icon, LinearLayout.LayoutParams(dp(88), dp(88)))
