@@ -1,6 +1,6 @@
 # 設定與疑難排解
 
-[繁體中文首頁](../README.zh-TW.md) · [安裝與連線](INSTALL.zh-TW.md) · [隱私權與診斷](PRIVACY.zh-TW.md)
+[首頁](../README.md) · [安裝與連線](INSTALL.zh-TW.md) · [隱私權與診斷](PRIVACY.zh-TW.md)
 
 ## 設定分類
 

@@ -1,6 +1,6 @@
 # 隱私權與診斷
 
-[繁體中文首頁](../README.zh-TW.md) · [報告匯出步驟](SETTINGS.zh-TW.md#匯出診斷報告與回報問題) · [英文原文](PRIVACY.md)
+[首頁](../README.md) · [報告匯出步驟](SETTINGS.zh-TW.md#匯出診斷報告與回報問題) · [英文原文](PRIVACY.md)
 
 ## 連線與本機資料
 

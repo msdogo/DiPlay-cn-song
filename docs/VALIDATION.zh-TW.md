@@ -1,6 +1,6 @@
 # 繁體中文支援驗證紀錄
 
-[繁體中文首頁](../README.zh-TW.md) · [完整建置指令](BUILD.zh-TW.md#完整檢查)
+[首頁](../README.md) · [完整建置指令](BUILD.zh-TW.md#完整檢查)
 
 日期：2026-10-12。分支：`codex/traditional-chinese-support`。驗證環境：Windows、專案 Gradle wrapper 9.5.0、JDK 25 工具鏈及 Android SDK 37.0。
 

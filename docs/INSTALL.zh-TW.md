@@ -1,6 +1,6 @@
 # 安裝與連線
 
-[繁體中文首頁](../README.zh-TW.md) · [設定與疑難排解](SETTINGS.zh-TW.md) · [英文安裝指南](INSTALL.md)
+[首頁](../README.md) · [設定與疑難排解](SETTINGS.zh-TW.md) · [安裝指南](INSTALL.md)
 
 ## 安裝前準備
 

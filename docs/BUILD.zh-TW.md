@@ -1,6 +1,6 @@
 # 從原始碼建置 DiPlay
 
-[繁體中文首頁](../README.zh-TW.md) · [英文建置指南](BUILD.md)
+[首頁](../README.md) · [建置指南](BUILD.md)
 
 以下指令從專案根目錄執行，也就是包含 `gradlew` 與 `settings.gradle.kts` 的目錄。環境版本以本分支的建置設定及 CI 為準。
 
