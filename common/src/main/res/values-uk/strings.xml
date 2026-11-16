@@ -598,6 +598,10 @@
     <string name="settings_car_hotspot_config_open">Відкрита точка доступу DiPlay не перезаписує пароль автомобіля.</string>
     <string name="hotspot_control_missing">Немає дозволу керування точкою доступу. Надайте його через ADB або ввімкніть точку доступу в налаштуваннях авто.</string>
     <string name="hotspot_permission_granted">Дозвіл надано.</string>
+    <string name="settings_hotspot_permission_prompt_title">Потрібен доступ до точки доступу</string>
+    <string name="settings_hotspot_permission_prompt_message">З цим дозволом DiPlay сам вмикає точку доступу автомобіля під час кожного запуску. Без нього можна підключитися лише до вже ввімкненої точки.</string>
+    <string name="settings_hotspot_permission_prompt_grant">Дозволити доступ</string>
+    <string name="settings_hotspot_permission_prompt_later">Не зараз</string>
     <string name="hotspot_permission_failed">Запитаний дозвіл не надано. Перевірте налаштування авто та спробуйте ще раз.</string>
     <string name="hotspot_control_on">Точку доступу авто ввімкнено.</string>
     <string name="hotspot_control_unsupported">Прошивка не підтримує автоматичне ввімкнення точки доступу. Відкрийте налаштування авто.</string>

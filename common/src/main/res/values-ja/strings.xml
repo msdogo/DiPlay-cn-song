@@ -679,6 +679,10 @@
     <string name="settings_car_hotspot_config_open">DiPlayのオープンホットスポットは車載のパスワードを上書きしません。</string>
     <string name="hotspot_control_missing">ホットスポット操作の権限がありません。ADBで設定するか、車の設定からホットスポットを開いてください。</string>
     <string name="hotspot_permission_granted">権限を許可しました。</string>
+    <string name="settings_hotspot_permission_prompt_title">ホットスポットの権限が必要です</string>
+    <string name="settings_hotspot_permission_prompt_message">許可すると、DiPlay が起動のたびに車のホットスポットを自動でオンにできます。許可しない場合は、すでにオンのホットスポットにのみ接続できます。</string>
+    <string name="settings_hotspot_permission_prompt_grant">アクセスを許可</string>
+    <string name="settings_hotspot_permission_prompt_later">あとで</string>
     <string name="hotspot_permission_failed">要求した権限が許可されませんでした。車の設定を確認して再試行してください。</string>
     <string name="hotspot_control_on">車載ホットスポットはオンです。</string>
     <string name="hotspot_control_unsupported">このファームウェアはホットスポットの自動起動に対応していません。車の設定から開いてください。</string>

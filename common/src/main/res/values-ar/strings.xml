@@ -584,6 +584,10 @@
     <string name="settings_car_hotspot_config_open">لا تُكتب نقطة الاتصال المفتوحة في DiPlay فوق كلمة مرور السيارة.</string>
     <string name="hotspot_control_missing">إذن التحكم بنقطة الاتصال غير متاح. امنحه عبر ADB أو شغّل نقطة الاتصال من إعدادات السيارة.</string>
     <string name="hotspot_permission_granted">تم منح الإذن.</string>
+    <string name="settings_hotspot_permission_prompt_title">مطلوب إذن للوصول إلى نقطة الاتصال</string>
+    <string name="settings_hotspot_permission_prompt_message">بعد السماح يستطيع DiPlay تشغيل نقطة اتصال السيارة تلقائيًا عند كل بدء. بدونه يمكنه الاتصال فقط بنقطة اتصال قيد التشغيل.</string>
+    <string name="settings_hotspot_permission_prompt_grant">السماح بالوصول</string>
+    <string name="settings_hotspot_permission_prompt_later">ليس الآن</string>
     <string name="hotspot_permission_failed">لم يتم منح الإذن المطلوب. راجع إعدادات السيارة وحاول مجددًا.</string>
     <string name="hotspot_control_on">نقطة اتصال السيارة قيد التشغيل.</string>
     <string name="hotspot_control_unsupported">النظام لا يدعم تشغيل نقطة الاتصال تلقائيًا. افتح إعدادات السيارة لتشغيلها.</string>

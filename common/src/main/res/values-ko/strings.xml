@@ -676,6 +676,10 @@
     <string name="settings_car_hotspot_config_open">DiPlay의 개방형 핫스팟은 차량 비밀번호를 덮어쓰지 않습니다.</string>
     <string name="hotspot_control_missing">핫스팟 제어 권한이 없습니다. ADB를 통해 설정하거나 차량 설정에서 핫스팟을 여세요.</string>
     <string name="hotspot_permission_granted">권한이 허용되었습니다.</string>
+    <string name="settings_hotspot_permission_prompt_title">핫스팟 접근 권한이 필요합니다</string>
+    <string name="settings_hotspot_permission_prompt_message">허용하면 DiPlay가 시작할 때마다 차량 핫스팟을 자동으로 켤 수 있습니다. 허용하지 않으면 이미 켜진 핫스팟에만 연결할 수 있습니다.</string>
+    <string name="settings_hotspot_permission_prompt_grant">접근 허용</string>
+    <string name="settings_hotspot_permission_prompt_later">나중에</string>
     <string name="hotspot_permission_failed">요청한 권한이 허용되지 않았습니다. 차량 설정을 확인하고 다시 시도하세요.</string>
     <string name="hotspot_control_on">차량 핫스팟이 켜져 있습니다.</string>
     <string name="hotspot_control_unsupported">이 펌웨어는 핫스팟 자동 시작을 지원하지 않습니다. 차량 설정에서 핫스팟을 여세요.</string>

@@ -2520,7 +2520,14 @@ class CarPlayController(
             )
             val manualFallback = result == com.shilapi.xcertplay.network.CarHotspotTethering.Result.UNSUPPORTED &&
                 com.shilapi.xcertplay.network.CarHotspotStatus.isEnabled(appContext) == null
-            if (result != com.shilapi.xcertplay.network.CarHotspotTethering.Result.READY && !manualFallback) {
+            // No hotspot control is not the same as a hotspot that is off: the driver may have turned the
+            // car's own hotspot on by hand, and the connection then works. Refusing here is what made the
+            // CN default (auto-start on, permission not granted yet) fail on every launch.
+            val controlMissing = result == com.shilapi.xcertplay.network.CarHotspotTethering.Result.PERMISSION_REQUIRED
+            if (controlMissing) {
+                debugLog("car hotspot: automatic start needs the hotspot control permission; connecting without it")
+            }
+            if (result != com.shilapi.xcertplay.network.CarHotspotTethering.Result.READY && !manualFallback && !controlMissing) {
                 throw WirelessStartupException(
                     if (result == com.shilapi.xcertplay.network.CarHotspotTethering.Result.TIMED_OUT ||
                         result == com.shilapi.xcertplay.network.CarHotspotTethering.Result.FAILED)
@@ -2538,7 +2545,10 @@ class CarPlayController(
         var pastOffReport = false
         if (hotspotMode == WirelessHotspotMode.MANUAL) {
             val state = com.shilapi.xcertplay.network.CarHotspotStatus.isEnabled(appContext)
-            if (com.shilapi.xcertplay.network.CarHotspotSettings.reportedOff(appContext, state)) {
+            // With auto-start on, the driver already delegated this: a report of "off" that DiPlay cannot
+            // act on must not stop the attempt. It either comes up, or the start fails with its own reason.
+            val delegated = com.shilapi.xcertplay.network.CarHotspotSettings.enabled(appContext)
+            if (!delegated && com.shilapi.xcertplay.network.CarHotspotSettings.reportedOff(appContext, state)) {
                 throw WirelessStartupException(WirelessStartupFailure.HOTSPOT_CONFIGURATION,
                     "The car hotspot is off. Turn it on in the car settings and connect again.",
                     ConnectionFailureCause.CAR_HOTSPOT_OFF)

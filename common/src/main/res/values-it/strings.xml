@@ -658,6 +658,10 @@
     <string name="auto_car_hotspot_description">Avvia l’hotspot dell’auto salvato quando DiPlay si apre. Attivando questa opzione vengono richiesti automaticamente i permessi necessari tramite ADB; consenti la richiesta sullo schermo dell’auto. Abilita “Apri all’avvio dell’auto” per l’avvio all’accensione. Mantiene nome e password dell’hotspot e non lo spegne mai.</string>
     <string name="hotspot_control_missing">Manca il permesso per controllare l’hotspot. Configuralo tramite ADB oppure apri l’hotspot nelle impostazioni dell’auto.</string>
     <string name="hotspot_permission_granted">Permesso concesso.</string>
+    <string name="settings_hotspot_permission_prompt_title">Serve l\'accesso all\'hotspot</string>
+    <string name="settings_hotspot_permission_prompt_message">Consentendolo, DiPlay può attivare da solo l\'hotspot dell\'auto a ogni avvio. Senza, può solo collegarsi a un hotspot già attivo.</string>
+    <string name="settings_hotspot_permission_prompt_grant">Consenti accesso</string>
+    <string name="settings_hotspot_permission_prompt_later">Non ora</string>
     <string name="hotspot_permission_failed">Il permesso richiesto non è stato concesso. Controlla le impostazioni dell’auto e riprova.</string>
     <string name="hotspot_control_on">L’hotspot dell’auto è acceso.</string>
     <string name="hotspot_control_unsupported">Questo firmware non supporta l’avvio automatico dell’hotspot. Apri l’hotspot nelle impostazioni dell’auto.</string>

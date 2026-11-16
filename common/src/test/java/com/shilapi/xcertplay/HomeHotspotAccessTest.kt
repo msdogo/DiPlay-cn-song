@@ -124,8 +124,10 @@ class HomeHotspotAccessTest {
         awaitResult(home, CarHotspotTethering.Result.PERMISSION_REQUIRED)
         val shown = texts(home)
         assertTrue(shown.toString(), home.getString(R.string.hotspot_control_missing) in shown)
-        assertTrue(shown.toString(), home.getString(R.string.open_car_hotspot_settings) in shown)
-        assertFalse(shown.toString(), home.getString(R.string.settings_write_settings_allow) in shown)
+        // A BYD unit grants the same access over its own ADB, so the reminder offers that, not the car's
+        // hotspot screen: opening that screen would grant nothing.
+        assertTrue(shown.toString(), home.getString(R.string.settings_write_settings_allow) in shown)
+        assertFalse(shown.toString(), home.getString(R.string.open_car_hotspot_settings) in shown)
     }
 
     @Test fun onceTheAccessIsAllowedTheHotspotIsStartedOnReturn() {

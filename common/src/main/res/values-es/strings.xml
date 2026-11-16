@@ -584,6 +584,10 @@
     <string name="settings_car_hotspot_config_open">Un punto de acceso abierto en DiPlay no sobrescribe la contraseña del coche.</string>
     <string name="hotspot_control_missing">Falta el permiso de control del punto de acceso. Concédelo mediante ADB o actívalo en los ajustes del coche.</string>
     <string name="hotspot_permission_granted">Permiso concedido.</string>
+    <string name="settings_hotspot_permission_prompt_title">Se necesita acceso al punto de acceso</string>
+    <string name="settings_hotspot_permission_prompt_message">Si lo permites, DiPlay puede activar el punto de acceso del coche por sí solo en cada inicio. Sin él, solo puede unirse a un punto de acceso ya activo.</string>
+    <string name="settings_hotspot_permission_prompt_grant">Permitir acceso</string>
+    <string name="settings_hotspot_permission_prompt_later">Ahora no</string>
     <string name="hotspot_permission_failed">No se ha concedido el permiso solicitado. Revisa los ajustes del coche e inténtalo de nuevo.</string>
     <string name="hotspot_control_on">El punto de acceso del coche está activado.</string>
     <string name="hotspot_control_unsupported">El firmware no admite el inicio automático del punto de acceso. Actívalo en los ajustes del coche.</string>

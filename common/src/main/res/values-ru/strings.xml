@@ -584,6 +584,10 @@
     <string name="settings_car_hotspot_config_open">Открытая точка доступа DiPlay не перезаписывает пароль автомобиля.</string>
     <string name="hotspot_control_missing">Нет разрешения управления точкой доступа. Выдайте его через ADB или включите точку доступа в настройках автомобиля.</string>
     <string name="hotspot_permission_granted">Разрешение предоставлено.</string>
+    <string name="settings_hotspot_permission_prompt_title">Нужен доступ к точке доступа</string>
+    <string name="settings_hotspot_permission_prompt_message">С этим разрешением DiPlay сам включает точку доступа автомобиля при каждом запуске. Без него можно подключиться только к уже включённой точке.</string>
+    <string name="settings_hotspot_permission_prompt_grant">Разрешить доступ</string>
+    <string name="settings_hotspot_permission_prompt_later">Не сейчас</string>
     <string name="hotspot_permission_failed">Запрошенное разрешение не выдано. Проверьте настройки автомобиля и повторите попытку.</string>
     <string name="hotspot_control_on">Точка доступа автомобиля включена.</string>
     <string name="hotspot_control_unsupported">Прошивка не поддерживает автоматическое включение точки доступа. Откройте настройки автомобиля.</string>

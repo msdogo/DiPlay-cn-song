@@ -1012,11 +1012,18 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
             // Off BYD units the access is allowed on Android's "Modify system settings" screen; ADB plays no part.
             val allowOnSystemScreen = startupProblem == CarHotspotTethering.Result.PERMISSION_REQUIRED &&
                 !CarHotspotSetup.isBydHeadUnit(this) && CarHotspotTethering.appStartSupported()
+            // A BYD unit grants the same access over its own ADB, so the reminder must offer that path:
+            // the one-time prompt can be dismissed, and the car's own screen would grant nothing.
+            val grantOverAdb = startupProblem == CarHotspotTethering.Result.PERMISSION_REQUIRED &&
+                CarHotspotSetup.isBydHeadUnit(this)
             card.addView(label(if (allowOnSystemScreen) getString(R.string.settings_write_settings_missing)
                 else hotspotResultText(startupProblem), 15, WARNING))
             if (!compact) card.addView(
-                if (allowOnSystemScreen) homeButton(getString(R.string.settings_write_settings_allow), false) { openWriteSettingsAccess() }
-                else homeButton(getString(R.string.open_car_hotspot_settings), false) { openCarWifiSettings() },
+                when {
+                    allowOnSystemScreen -> homeButton(getString(R.string.settings_write_settings_allow), false) { openWriteSettingsAccess() }
+                    grantOverAdb -> homeButton(getString(R.string.settings_write_settings_allow), false) { grantHotspotAccessOverAdb() }
+                    else -> homeButton(getString(R.string.open_car_hotspot_settings), false) { openCarWifiSettings() }
+                },
                 matchButton(CONTROL_GAP_DP, 56))
         } else if (carHotspotOff()) {
             // No name is saved before Connection setup, and the sentence that quotes it would show “”.
@@ -3207,7 +3214,10 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
     private fun carHotspotOff(): Boolean =
         AirPlayPersistence.loadWirelessHotspotMode(this) == WirelessHotspotMode.MANUAL &&
             CarHotspotSettings.reportedOff(this, com.shilapi.xcertplay.network.CarHotspotStatus.isEnabled(this)) &&
-            !(CarHotspotSettings.enabled(this) && CarHotspotTethering.permitted(this))
+            // An opted-in auto-start is the driver's answer to this reminder: the controller prepares the
+            // hotspot, and without the permission the connection simply runs without it. Warning here on
+            // every tap is what the CN default (auto-start on, no permission yet) used to produce.
+            !CarHotspotSettings.enabled(this)
 
     /**
      * Other head units: starting the hotspot needs only Android's "Modify system settings" access
@@ -3329,6 +3339,34 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
         adbSwitches[title] = control to read
     }
 
+    /**
+     * Asked once, the first time a start-up attempt found no hotspot access. Every later visit finds the
+     * reminder on the home card instead; this is a convenience, not the only way in.
+     */
+    private fun offerHotspotPermissionOnce() {
+        val prefs = getSharedPreferences("diplay", MODE_PRIVATE)
+        if (prefs.getBoolean(KEY_HOTSPOT_PERMISSION_PROMPTED, false)) return
+        if (CarHotspotTethering.permitted(this)) return
+        prefs.edit().putBoolean(KEY_HOTSPOT_PERMISSION_PROMPTED, true).apply()
+        appDialogBuilder()
+            .setTitle(getString(R.string.settings_hotspot_permission_prompt_title))
+            .setMessage(getString(R.string.settings_hotspot_permission_prompt_message))
+            .setPositiveButton(getString(R.string.settings_hotspot_permission_prompt_grant)) { _, _ ->
+                grantHotspotAccessOverAdb()
+            }
+            .setNegativeButton(getString(R.string.settings_hotspot_permission_prompt_later), null)
+            .show()
+    }
+
+    /** Grants the hotspot access over the head unit's own ADB, the same path the settings switch uses. */
+    private fun grantHotspotAccessOverAdb() {
+        requestAdbSwitchChange(listOf(CarHotspotSetup.Permission.HOTSPOT)) {
+            startupHotspotCancelled = false
+            hotspotStartupResult = null
+            startCarHotspotOnLaunch()
+        }
+    }
+
     private fun requestAdbSwitchChange(permissions: List<CarHotspotSetup.Permission>, save: () -> Unit) {
         if (adbSwitchChangePending || vehicleAdbWorkInProgress()) {
             updateAdbSwitches()
@@ -3394,6 +3432,7 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
                 if (isFinishing || isDestroyed || result == CarHotspotTethering.Result.CANCELLED) return@runOnUiThread
                 hotspotStartupResult = result
                 if (page == "home") render()
+                if (result == CarHotspotTethering.Result.PERMISSION_REQUIRED) offerHotspotPermissionOnce()
             }
         }, "diplay-hotspot-startup").start()
     }
@@ -7810,6 +7849,9 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
     private val FOCUS_RING get() = palette.focusRing
 
     companion object {
+        /** The one-time hotspot-access prompt was already shown; the home card carries it from then on. */
+        private const val KEY_HOTSPOT_PERMISSION_PROMPTED = "hotspot_permission_prompted"
+
         private fun alignedTextCentreY(
             view: TextView,
             text: CharSequence,

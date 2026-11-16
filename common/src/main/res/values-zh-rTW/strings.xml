@@ -611,6 +611,10 @@
     <string name="settings_car_hotspot_config_open">DiPlay 的開放熱點不會改寫車機的熱點密碼。</string>
     <string name="hotspot_control_missing">缺少熱點控制權限。請透過 ADB 授權，或在車機設定中手動開啟熱點。</string>
     <string name="hotspot_permission_granted">授權成功。</string>
+    <string name="settings_hotspot_permission_prompt_title">自動開啟熱點需要授權</string>
+    <string name="settings_hotspot_permission_prompt_message">允許後 DiPlay 可在每次啟動時自動開啟車機熱點；未授權時只能連線已在車機上開啟的熱點。</string>
+    <string name="settings_hotspot_permission_prompt_grant">去授權</string>
+    <string name="settings_hotspot_permission_prompt_later">稍後再說</string>
     <string name="hotspot_permission_failed">未獲得所請求的權限。請檢查車機設定後再試一次。</string>
     <string name="hotspot_control_on">車機熱點已開啟。</string>
     <string name="hotspot_control_unsupported">目前韌體不支援自動開啟熱點，請在車機設定中開啟。</string>

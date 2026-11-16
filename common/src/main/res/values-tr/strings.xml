@@ -645,6 +645,10 @@
     <string name="auto_car_hotspot_description">DiPlay açıldığında kayıtlı araç erişim noktasını başlatır. Bunu açmak, gerekli izinleri ADB aracılığıyla otomatik olarak ister; araç ekranındaki isteme izin verin. Açılışta başlatma için “Araç çalıştıktan sonra aç”ı etkinleştirin. Erişim noktası adını ve parolasını korur ve asla kapatmaz.</string>
     <string name="hotspot_control_missing">Erişim noktası denetim izni eksik. ADB aracılığıyla ayarlayın veya araç ayarlarından erişim noktasını açın.</string>
     <string name="hotspot_permission_granted">İzin verildi.</string>
+    <string name="settings_hotspot_permission_prompt_title">Erişim noktası izni gerekli</string>
+    <string name="settings_hotspot_permission_prompt_message">İzin verirseniz DiPlay her açılışta aracın erişim noktasını kendi açar. İzin yoksa yalnızca açık olan bir erişim noktasına bağlanabilir.</string>
+    <string name="settings_hotspot_permission_prompt_grant">Erişime izin ver</string>
+    <string name="settings_hotspot_permission_prompt_later">Şimdi değil</string>
     <string name="hotspot_permission_failed">İstenen izin verilmedi. Araç ayarlarını kontrol edin ve tekrar deneyin.</string>
     <string name="hotspot_control_on">Araç erişim noktası açık.</string>
     <string name="hotspot_control_unsupported">Bu donanım yazılımı otomatik erişim noktası başlatmayı desteklemiyor. Erişim noktasını araç ayarlarından açın.</string>

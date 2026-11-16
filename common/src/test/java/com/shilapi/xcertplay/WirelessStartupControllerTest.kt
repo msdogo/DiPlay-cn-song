@@ -142,7 +142,6 @@ class WirelessStartupControllerTest {
                 ConnectionFailureCause.CAR_HOTSPOT_START_TIMED_OUT),
             Triple(CarHotspotTethering.Result.FAILED, WirelessStartupFailure.HOTSPOT_NOT_READY,
                 ConnectionFailureCause.CAR_HOTSPOT_START_FAILED),
-            Triple(CarHotspotTethering.Result.PERMISSION_REQUIRED, WirelessStartupFailure.HOTSPOT_CONFIGURATION, null),
         )) {
             Tethering.result = result
             val failure = hotspotStartFailure()

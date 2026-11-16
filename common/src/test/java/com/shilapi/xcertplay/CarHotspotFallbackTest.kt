@@ -73,10 +73,23 @@ class CarHotspotFallbackTest {
         assertStartupFailure("This firmware does not support automatic hotspot startup")
     }
 
-    @Test fun missingControlPermissionIsStillReported() {
+    // The CN build opts into automatic startup by default, so a missing permission is not a reason to
+    // refuse: the driver may have turned the car's own hotspot on by hand. The attempt goes on and the
+    // manual attachment is what decides the outcome.
+    @Test fun optedInStartupWithoutControlPermissionStillAttaches() {
         ApState.enabled = false
+        CarHotspotSettings.setEnabled(app, true)
         CarHotspotAdbGrantTest.WritePermission.allowed = false
-        assertStartupFailure("Hotspot control permission is missing")
+        controller().use { assertEquals(WirelessHotspotBackend.MANUAL_HOTSPOT, start(it).backend) }
+        assertEquals(1, ManualAttachment.starts)
+    }
+
+    // Without the opt-in the permission is never asked for, so the off report is the honest answer.
+    @Test fun aDriverWhoDidNotOptInGetsTheOffReport() {
+        ApState.enabled = false
+        CarHotspotSettings.setEnabled(app, false)
+        CarHotspotAdbGrantTest.WritePermission.allowed = false
+        assertStartupFailure("The car hotspot is off. Turn it on in the car settings and connect again.")
     }
 
     @Test fun cancelledStartupDoesNotFallBackEvenWhenApStateIsUnreadable() {

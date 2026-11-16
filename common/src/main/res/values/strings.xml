@@ -667,6 +667,10 @@
     <string name="settings_car_hotspot_config_open">An open hotspot in DiPlay does not overwrite the car\'s password.</string>
     <string name="hotspot_control_missing">Hotspot control permission is missing. Set it up through ADB or open the hotspot in car settings.</string>
     <string name="hotspot_permission_granted">Permission granted.</string>
+    <string name="settings_hotspot_permission_prompt_title">Hotspot access needed</string>
+    <string name="settings_hotspot_permission_prompt_message">Allow it and DiPlay can turn the car hotspot on by itself at every start. Without it DiPlay can only join a hotspot that is already on.</string>
+    <string name="settings_hotspot_permission_prompt_grant">Allow access</string>
+    <string name="settings_hotspot_permission_prompt_later">Not now</string>
     <string name="hotspot_permission_failed">The requested permission was not granted. Check the car settings and try again.</string>
     <string name="hotspot_control_on">The car hotspot is on.</string>
     <string name="hotspot_control_unsupported">This firmware does not support automatic hotspot startup. Open the hotspot in car settings.</string>
