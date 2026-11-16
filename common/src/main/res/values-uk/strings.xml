@@ -309,6 +309,7 @@
     <string name="remote_token_contains_u_0000">Віддалений токен містить U+0000</string>
     <string name="report_android_location_to_the_iphone">Передавати геопозицію Android на iPhone</string>
     <string name="report_location_to_iphone">Передавати геопозицію на iPhone</string>
+    <string name="settings_location_reporting_needs_permission">Дозвіл на точну геопозицію не надано, тому нічого ще не передається. Дозвольте DiPlay доступ до геопозиції в дозволах застосунків головного пристрою.</string>
     <string name="report_saved_open_it_from_your_file_manager_to_share_it">Звіт збережено. Щоб поділитися ним, відкрийте його у файловому менеджері.</string>
     <string name="reports_save_to_downloads_diplay">Звіти зберігаються в Downloads/DiPlay.\u0020</string>
     <string name="requesting_iphone_usb_permission">Запит дозволу на USB-доступ до iPhone</string>

@@ -311,6 +311,7 @@
     <string name="remote_token_contains_u_0000">Remote token contains U+0000</string>
     <string name="report_android_location_to_the_iphone">Report Android location to the iPhone</string>
     <string name="report_location_to_iphone">Report location to iPhone</string>
+    <string name="settings_location_reporting_needs_permission">Precise location permission is missing, so nothing is sent yet. Allow Location for DiPlay in the head unit\'s app permissions.</string>
     <string name="report_saved_open_it_from_your_file_manager_to_share_it">Report saved. Open it from your file manager to share it.</string>
     <string name="reports_save_to_downloads_diplay">Reports save to Downloads/DiPlay.\u0020</string>
     <string name="requesting_iphone_usb_permission">Requesting iPhone USB permission</string>

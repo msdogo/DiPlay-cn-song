@@ -309,6 +309,7 @@
     <string name="remote_token_contains_u_0000">遠端權杖包含 U+0000</string>
     <string name="report_android_location_to_the_iphone">向 iPhone 回報 Android 位置</string>
     <string name="report_location_to_iphone">向 iPhone 回報位置</string>
+    <string name="settings_location_reporting_needs_permission">缺少精確位置權限，目前不會傳送位置。請在車機的 App 權限中允許 DiPlay 使用位置資訊。</string>
     <string name="report_saved_open_it_from_your_file_manager_to_share_it">報告已儲存。在檔案管理器中開啟即可分享。</string>
     <string name="reports_save_to_downloads_diplay">報告會儲存至 Downloads/DiPlay。</string>
     <string name="requesting_iphone_usb_permission">正在要求 iPhone USB 權限</string>

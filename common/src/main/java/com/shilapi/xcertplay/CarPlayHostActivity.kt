@@ -207,10 +207,10 @@ open class CarPlayHostActivity : ComponentActivity() {
             firmwareVersion = "0.1.0",
             hardwareVersion = "1.0",
             carPlayUsbInterfaceNumber = 3,
-            locationInformationEnabled = locationReportingEnabled,
+            locationInformationEnabled = effectiveLocationReporting,
             vehicleStatusEnabled = com.shilapi.xcertplay.hud.BydOutputSettings.batteryToIphoneActive(this),
             chargingConnectors = com.shilapi.xcertplay.hud.BydOutputSettings.chargingConnectors(this),
-            vehicleSpeedEnabled = locationReportingEnabled &&
+            vehicleSpeedEnabled = effectiveLocationReporting &&
                 (com.shilapi.xcertplay.hud.BydOutputSettings.wheelSpeedToIphoneActive(this) || EcarxWheelSpeed.present()),
         ),
         label = "DiPlay",
@@ -229,7 +229,7 @@ open class CarPlayHostActivity : ComponentActivity() {
         existingWifiSsid = existingWifiSsid,
         existingWifiPassphrase = existingWifiPassphrase,
         existingWifiInterface = existingWifiInterface.trim().takeIf { it.isNotEmpty() },
-        locationReportingEnabled = locationReportingEnabled,
+        locationReportingEnabled = effectiveLocationReporting,
         availableCurrentMilliAmps = AirPlayPersistence.loadUsbChargingCurrent(this).milliAmps,
     )
 
@@ -266,23 +266,20 @@ open class CarPlayHostActivity : ComponentActivity() {
             awaitingLocationPermission = false
             locationPermissionAvailable = hasFineLocationPermission()
             if (locationPermissionAvailable) {
+                locationPermissionDenied = false
                 appendLog("Location permission granted")
             } else if (locationReportingEnabled) {
-                locationReportingEnabled = false
-                if (!menuOpen) {
-                    AirPlayPersistence.saveLocationReportingEnabled(
-                        this@CarPlayHostActivity,
-                        false,
-                    )
-                }
-                locationReportingSwitch?.isChecked = false
+                // The saved choice is the driver's: a refusal only suspends reporting for this run,
+                // so the next start asks once more instead of silently turning the default off.
+                locationPermissionDenied = true
+                locationReportingSwitch?.isChecked = true
                 val approximateOnly =
                     grants[Manifest.permission.ACCESS_COARSE_LOCATION] == true
                 appendLog(
                     if (approximateOnly) {
-                        "Precise location permission denied; location reporting disabled"
+                        "Precise location permission denied; location reporting suspended for this session"
                     } else {
-                        "Location permission denied; location reporting disabled"
+                        "Location permission denied; location reporting suspended for this session"
                     },
                 )
             }
@@ -543,8 +540,17 @@ open class CarPlayHostActivity : ComponentActivity() {
     private var safeAreaDrawOutside = true
     private var mainDisplayDisableSafeArea = false
     private var blackCornerRadiusDp = CarPlayBlackCornerOverlay.IPHONE_MASK
+    /** The driver's own choice. A refused permission request never rewrites it. */
     private var locationReportingEnabled = false
     private var locationPermissionAvailable = false
+    /**
+     * Set once the precise-location request was refused in this run. The preference stays as the
+     * driver left it; only what the iPhone is told changes, and the next start asks again.
+     */
+    private var locationPermissionDenied = false
+    /** What the iPhone is told: the saved choice counts only while precise location is granted. */
+    private val effectiveLocationReporting: Boolean
+        get() = locationReportingEnabled && !locationPermissionDenied
     private var microphoneAvailable = false
     private var microphonePermissionResolved = false
     private var wirelessEnabled = false
@@ -1014,7 +1020,7 @@ open class CarPlayHostActivity : ComponentActivity() {
     }
 
     private fun requestStartupPrerequisites() {
-        if (locationReportingEnabled && !locationPermissionAvailable) {
+        if (locationReportingEnabled && !locationPermissionAvailable && !locationPermissionDenied) {
             requestLocationPermission()
             return
         }
@@ -1242,7 +1248,8 @@ open class CarPlayHostActivity : ComponentActivity() {
         // resumed, not recreated: refresh what that screen can change before it is used again.
         if (!menuOpen) loadConnectionSettings()
         locationPermissionAvailable = hasFineLocationPermission()
-        if (locationReportingEnabled && !locationPermissionAvailable && !menuOpen) {
+        if (locationPermissionAvailable) locationPermissionDenied = false
+        if (locationReportingEnabled && !locationPermissionAvailable && !locationPermissionDenied && !menuOpen) {
             requestLocationPermission()
         }
         wirelessPermissionsReady = !wirelessEnabled || hasRequiredWirelessPermissions()
@@ -3666,8 +3673,14 @@ open class CarPlayHostActivity : ComponentActivity() {
             labelSizeSp = 15f,
             onChanged = { checked -> onLocationReportingChanged(checked) },
         ).also { locationReportingSwitch = it.switch }.rowView
-        val infoRows = listOf(
+        // The switch shows the driver's choice, so it can read "on" while the permission is missing.
+        val locationHint = if (locationReportingEnabled && !locationPermissionAvailable) {
+            menuText(getString(R.string.settings_location_reporting_needs_permission), 12f, MENU_DANGER)
+                .apply { setPadding(0, dp(6), 0, dp(6)) }
+        } else null
+        val infoRows = listOfNotNull(
             locationRow,
+            locationHint,
             settingsSwitchRow(
                 label = getString(R.string.turn_card_show_arrival),
                 checked = overlayShowArrival,
@@ -4317,6 +4330,8 @@ open class CarPlayHostActivity : ComponentActivity() {
         )
         updateResolutionMenu()
         if (locationReportingEnabled && !locationPermissionAvailable) {
+            // Switching it back on is a fresh request, even after an earlier refusal.
+            locationPermissionDenied = false
             requestLocationPermission()
         }
     }
@@ -5216,7 +5231,7 @@ open class CarPlayHostActivity : ComponentActivity() {
             append(getString(R.string.preview_fullscreen)).append(fullscreen).append('\n')
             append(getString(R.string.preview_video_transport)).append(transport).append('\n')
             append(getString(R.string.preview_location_reporting))
-                .append(if (locationReportingEnabled) getString(R.string.enabled_value) else getString(R.string.disabled_value))
+                .append(if (effectiveLocationReporting) getString(R.string.enabled_value) else getString(R.string.disabled_value))
                 .append('\n')
             if (advancedAudioChannelMappingSupported) {
                 append(getString(R.string.preview_audio_channel_mapping))
@@ -6379,7 +6394,8 @@ open class CarPlayHostActivity : ComponentActivity() {
         }
         val size = activeDisplaySize ?: return
         val transportReady = if (wirelessEnabled) wirelessPermissionsReady else vpnReady
-        val locationReady = !locationReportingEnabled || locationPermissionAvailable
+        // A suspended report never blocks the start: the session runs without location.
+        val locationReady = !effectiveLocationReporting || locationPermissionAvailable
         if (
             !transportReady ||
             !locationReady ||

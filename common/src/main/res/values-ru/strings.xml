@@ -302,6 +302,7 @@
     <string name="remote_token_contains_u_0000">Удалённый токен содержит U+0000</string>
     <string name="report_android_location_to_the_iphone">Передавать местоположение Android на iPhone</string>
     <string name="report_location_to_iphone">Передавать местоположение на iPhone</string>
+    <string name="settings_location_reporting_needs_permission">Разрешение на точное местоположение не выдано, поэтому данные пока не отправляются. Разрешите DiPlay доступ к геопозиции в разрешениях приложений головного устройства.</string>
     <string name="report_saved_open_it_from_your_file_manager_to_share_it">Отчёт сохранён. Откройте его в файловом менеджере, чтобы поделиться.</string>
     <string name="reports_save_to_downloads_diplay">Отчёты сохраняются в Downloads/DiPlay.\u0020</string>
     <string name="requesting_iphone_usb_permission">Запрос разрешения USB для iPhone</string>

@@ -307,6 +307,7 @@
     <string name="remote_token_contains_u_0000">Uzak belirteç U+0000 içeriyor</string>
     <string name="report_android_location_to_the_iphone">Android konumunu iPhone\'a bildir</string>
     <string name="report_location_to_iphone">Konumu iPhone\'a bildir</string>
+    <string name="settings_location_reporting_needs_permission">Kesin konum izni yok, bu yüzden henüz hiçbir şey gönderilmiyor. Ana ünitenin uygulama izinlerinde DiPlay\'e Konum izni verin.</string>
     <string name="report_saved_open_it_from_your_file_manager_to_share_it">Rapor kaydedildi. Paylaşmak için dosya yöneticinizden açın.</string>
     <string name="reports_save_to_downloads_diplay">Raporlar İndirilenler/DiPlay klasörüne kaydedilir.\u0020</string>
     <string name="requesting_iphone_usb_permission">iPhone USB izni isteniyor</string>

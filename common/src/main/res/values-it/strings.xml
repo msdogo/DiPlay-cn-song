@@ -312,6 +312,7 @@
     <string name="remote_token_contains_u_0000">Il token remoto contiene U+0000</string>
     <string name="report_android_location_to_the_iphone">Invia all’iPhone la posizione di Android</string>
     <string name="report_location_to_iphone">Invia la posizione all’iPhone</string>
+    <string name="settings_location_reporting_needs_permission">Manca il permesso per la posizione precisa, quindi non viene ancora inviato nulla. Consenti la Posizione per DiPlay nelle autorizzazioni delle app dell\'unità.</string>
     <string name="report_saved_open_it_from_your_file_manager_to_share_it">Report salvato. Aprilo dal gestore file per condividerlo.</string>
     <string name="reports_save_to_downloads_diplay">I report vengono salvati in Download/DiPlay.\u0020</string>
     <string name="requesting_iphone_usb_permission">Richiesta del permesso USB per l’iPhone</string>

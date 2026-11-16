@@ -316,6 +316,7 @@
     <string name="remote_token_contains_u_0000">원격 토큰에 U+0000이 포함되어 있습니다.</string>
     <string name="report_android_location_to_the_iphone">Android 위치를 iPhone에 전송</string>
     <string name="report_location_to_iphone">위치를 iPhone에 전송</string>
+    <string name="settings_location_reporting_needs_permission">정확한 위치 권한이 없어 아직 아무것도 전송되지 않습니다. 헤드 유닛의 앱 권한에서 DiPlay의 위치를 허용하세요.</string>
     <string name="report_saved_open_it_from_your_file_manager_to_share_it">보고서를 저장했습니다. 파일 관리자에서 열어 공유하세요.</string>
     <string name="reports_save_to_downloads_diplay">보고서는 Downloads/DiPlay에 저장됩니다. </string>
     <string name="requesting_iphone_usb_permission">iPhone USB 권한 요청 중</string>

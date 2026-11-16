@@ -302,6 +302,7 @@
     <string name="remote_token_contains_u_0000">الرمز البعيد يحتوي على U+0000</string>
     <string name="report_android_location_to_the_iphone">إرسال موقع Android إلى iPhone</string>
     <string name="report_location_to_iphone">إرسال الموقع إلى iPhone</string>
+    <string name="settings_location_reporting_needs_permission">إذن الموقع الدقيق غير ممنوح، لذا لا يُرسل أي شيء بعد. اسمح بـ«الموقع» لتطبيق DiPlay من إعدادات أذونات التطبيقات في الشاشة.</string>
     <string name="report_saved_open_it_from_your_file_manager_to_share_it">تم حفظ التقرير. افتحه من مدير الملفات لمشاركته.</string>
     <string name="reports_save_to_downloads_diplay">تُحفظ التقارير في Downloads/DiPlay.\u0020</string>
     <string name="requesting_iphone_usb_permission">جارٍ طلب إذن USB لـ iPhone</string>

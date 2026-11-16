@@ -315,6 +315,7 @@
     <string name="remote_token_contains_u_0000">リモートトークンにU+0000が含まれています</string>
     <string name="report_android_location_to_the_iphone">Androidの位置情報をiPhoneへ送信する</string>
     <string name="report_location_to_iphone">iPhoneへ位置情報を送信</string>
+    <string name="settings_location_reporting_needs_permission">正確な位置情報の権限がないため、まだ何も送信されていません。車載端末のアプリ権限で DiPlay に位置情報を許可してください。</string>
     <string name="report_saved_open_it_from_your_file_manager_to_share_it">レポートを保存しました。ファイル管理アプリから開いて共有できます。</string>
     <string name="reports_save_to_downloads_diplay">レポートはDownloads/DiPlayに保存されます。\u0020</string>
     <string name="requesting_iphone_usb_permission">iPhoneのUSB接続権限を要求しています</string>

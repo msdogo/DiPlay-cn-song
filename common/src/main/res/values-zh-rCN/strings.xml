@@ -310,6 +310,7 @@
     <string name="remote_token_contains_u_0000">远程令牌包含 U+0000</string>
     <string name="report_android_location_to_the_iphone">向 iPhone 报告 Android 位置</string>
     <string name="report_location_to_iphone">向 iPhone 报告位置</string>
+    <string name="settings_location_reporting_needs_permission">缺少精确位置权限，目前不会发送位置。请在车机应用权限中允许 DiPlay 使用位置信息。</string>
     <string name="report_saved_open_it_from_your_file_manager_to_share_it">报告已保存。在文件管理器中打开即可分享。</string>
     <string name="reports_save_to_downloads_diplay">报告将保存到 Downloads/DiPlay。</string>
     <string name="requesting_iphone_usb_permission">正在请求 iPhone USB 权限</string>
