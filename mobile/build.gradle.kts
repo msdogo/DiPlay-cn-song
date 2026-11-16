@@ -19,8 +19,8 @@ android {
         applicationId = "com.diplay.song"
         minSdk = 25
         targetSdk = 37
-        versionCode = 124
-        versionName = "DiPlay-cn-song-1.0.5-cn.2"
+        versionCode = 125
+        versionName = "DiPlay-cn-song-1.0.6-cn.1"
 
     }
 
