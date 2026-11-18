@@ -6268,9 +6268,11 @@ open class CarPlayHostActivity : ComponentActivity() {
             Log.i(TAG, message)
             videoView?.let { updateVideoLayout(it.width, it.height) }
         } else if (display != null && !layoutChanged &&
-            size.width <= display.windowWidth && size.height <= display.windowHeight) {
+            size.width <= display.windowWidth && size.height <= display.windowHeight &&
+            shorterWindowKeepsTheCanvas(display, size.width, size.height)) {
             // Keep camera shrink/restore cycles within the original window connected. If the
-            // session started in a camera window, growth beyond it needs a full-size canvas.
+            // session started in a camera window, growth beyond it needs a full-size canvas, and a
+            // window that lost a system bar's height renegotiates instead of letterboxing the picture.
             val message = "Display changed ${previous.width}x${previous.height} -> ${size.width}x${size.height}; " +
                 "keeping CarPlay session canvas=${display.width}x${display.height}"
             appendLog(message)
@@ -6355,7 +6357,7 @@ open class CarPlayHostActivity : ComponentActivity() {
             val baseAspect = display.windowWidth.toDouble() / display.windowHeight
             val currentAspect = newSize.width.toDouble() / newSize.height
             val aspectDiff = kotlin.math.abs(currentAspect / baseAspect - 1.0)
-            if (aspectDiff > 0.08 && AirPlayPersistence.loadAdaptPipResolution(this)) {
+            if (aspectDiff > CANVAS_SHAPE_TOLERANCE && AirPlayPersistence.loadAdaptPipResolution(this)) {
                 return true
             }
         }
@@ -7450,6 +7452,24 @@ internal fun statusBarHiddenByAnotherWindow(display: CarPlaySessionDisplay, widt
     statusBarShown: Boolean?): Boolean =
     !display.hideTopBar && display.statusBarShown == true && statusBarShown == false &&
         width == display.windowWidth && height > display.windowHeight
+
+/** How far the kept canvas may differ in shape from the window before the picture is renegotiated. */
+internal const val CANVAS_SHAPE_TOLERANCE = 0.08
+
+/**
+ * The reversing camera shrinks the window for a moment and gives it back, so a shorter window keeps the
+ * running canvas and only the draw layout follows. A window that lost the height of a system bar keeps it
+ * only while the picture still matches the window's shape: a 1280x800 canvas kept below the returning bars
+ * of a 1280x660 window stayed narrower than that window, letterboxed on both sides, until the driver
+ * disconnected and connected again.
+ */
+internal fun shorterWindowKeepsTheCanvas(display: CarPlaySessionDisplay, width: Int, height: Int): Boolean {
+    if (width != display.windowWidth || height >= display.windowHeight) return true
+    if (width <= 0 || height <= 0 || display.width <= 0 || display.height <= 0) return true
+    val windowAspect = width.toDouble() / height
+    val canvasAspect = display.width.toDouble() / display.height
+    return kotlin.math.abs(windowAspect / canvasAspect - 1.0) <= CANVAS_SHAPE_TOLERANCE
+}
 
 /** Process-local hand-off for keeping the CarPlay session alive while no Activity is visible. */
 internal object CarPlayBackgroundSession {

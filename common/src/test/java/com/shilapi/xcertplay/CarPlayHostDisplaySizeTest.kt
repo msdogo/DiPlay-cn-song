@@ -197,6 +197,17 @@ class CarPlayHostDisplaySizeTest {
         assertNull(getField("pendingDisplaySize"))
     }
 
+    @Test fun aWindowThatLostASystemBarRebuildsInsteadOfLetterboxing() {
+        // The canvas came from the window before the bars returned; keeping it left the picture
+        // narrower than the window, letterboxed on both sides, until a manual reconnect.
+        startSession(windowWidth = 1280, windowHeight = 800, canvasWidth = 1280, canvasHeight = 800)
+        setField("activeDisplaySize", size(1280, 800))
+        applySize(1280, 660)
+        assertEquals(1, getField("restartGeneration"))
+        assertNull(getField("sessionDisplay"))
+        assertEquals(0, keepLogs())
+    }
+
     @Test fun anExplicitBarLayoutChangeStillRebuildsTheSession() {
         startSession()
         setField("hideTopBar", false)

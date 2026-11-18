@@ -34,4 +34,31 @@ class StatusBarHiddenByAnotherWindowTest {
         assertFalse(statusBarHiddenByAnotherWindow(session(), 1400, 720, statusBarShown = false))
         assertFalse(statusBarHiddenByAnotherWindow(session(), 1280, 660, statusBarShown = false))
     }
+
+    /** The canvas of a window with different bars, at a different shape than the window that follows it. */
+    private fun canvasSession(canvasWidth: Int, canvasHeight: Int, windowWidth: Int = 1280, windowHeight: Int = 800) =
+        CarPlaySessionDisplay(
+            width = canvasWidth, height = canvasHeight, rotation = 0, hideTopBar = false, hideBottomBar = false,
+            windowWidth = windowWidth, windowHeight = windowHeight,
+        )
+
+    @Test fun aCameraShrinkOfTheSameShapeStillKeepsTheCanvas() {
+        // The measured camera cycle: 1920x990, the camera takes 48 px off the height (5% shape change).
+        val session = canvasSession(1920, 990)
+        assertTrue(shorterWindowKeepsTheCanvas(session, 1920, 942))
+    }
+
+    @Test fun aWindowThatLostASystemBarRenegotiatesWhenThePictureNoLongerFits() {
+        // The old failure: a 1280x800 canvas below the returning bars of a 1280x660 window stayed
+        // letterboxed on both sides until the driver disconnected and connected again.
+        val session = canvasSession(1280, 800)
+        assertFalse(shorterWindowKeepsTheCanvas(session, 1280, 660))
+    }
+
+    @Test fun growthAndWidthChangesAreNotTheCameraCase() {
+        val session = canvasSession(1280, 800)
+        assertTrue(shorterWindowKeepsTheCanvas(session, 1280, 800))
+        assertTrue(shorterWindowKeepsTheCanvas(session, 1280, 900))
+        assertTrue(shorterWindowKeepsTheCanvas(session, 1340, 700))
+    }
 }
