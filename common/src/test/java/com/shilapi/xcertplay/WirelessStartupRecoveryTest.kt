@@ -1,6 +1,7 @@
 package com.shilapi.xcertplay
 
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
 import android.content.BroadcastReceiver
 import android.content.Intent
 import android.os.Handler
@@ -45,6 +46,7 @@ class WirelessStartupRecoveryTest {
         ReflectionHelpers.setField(CarPlayBackgroundSession, "owner", activity)
         retry = Button(activity).apply { visibility = View.GONE }
         ReflectionHelpers.setField(activity, "startupRetryButton", retry)
+        DiPlayPreferences.savePhone(activity, CHOSEN.lowercase(), "iPhone")
     }
 
     @After fun cleanup() {
@@ -179,6 +181,50 @@ class WirelessStartupRecoveryTest {
     private fun bluetooth(state: Int) {
         ReflectionHelpers.getField<BroadcastReceiver>(activity, "bluetoothOnReceiver").onReceive(activity,
             Intent(BluetoothAdapter.ACTION_STATE_CHANGED).putExtra(BluetoothAdapter.EXTRA_STATE, state))
+    }
+
+    // The driver switched the iPhone's own Bluetooth back on: that is the same wait as the head
+    // unit's radio, so CarPlay comes back at once instead of after the next 30 s back-off.
+    @Test fun theChosenIphoneReconnectingRunsTheRetryThatWaitsForIt() {
+        ReflectionHelpers.setField(activity, "reconnectAttempts", 4)
+        report(status = CarPlayStatus.Failed("Timed out after 10000ms connecting RFCOMM to phone"))
+        val pending = ReflectionHelpers.getField<Runnable>(activity, "pendingReconnect")
+        val handler = ReflectionHelpers.getField<Handler>(activity, "mainHandler")
+        assertTrue(handler.hasCallbacks(pending))
+
+        iphoneConnected(CHOSEN)
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertFalse(ReflectionHelpers.getField(activity, "reconnectScheduled"))
+        assertFalse(handler.hasCallbacks(pending))
+    }
+
+    @Test fun anotherDeviceReconnectingLeavesTheRetryOnItsDelay() {
+        ReflectionHelpers.setField(activity, "reconnectAttempts", 4)
+        report(status = CarPlayStatus.Failed("Timed out after 10000ms connecting RFCOMM to phone"))
+
+        iphoneConnected("00:11:22:33:44:55")
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertTrue(ReflectionHelpers.getField(activity, "reconnectScheduled"))
+    }
+
+    // A failure that is not about the phone's reach must not be woken early by a Bluetooth event.
+    @Test fun anUnrelatedFailureKeepsItsDelayWhenTheIphoneReconnects() {
+        report()
+        iphoneConnected(CHOSEN)
+        shadowOf(Looper.getMainLooper()).idle()
+        assertTrue(ReflectionHelpers.getField(activity, "reconnectScheduled"))
+    }
+
+    private fun iphoneConnected(address: String) {
+        val device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address)
+        ReflectionHelpers.getField<BroadcastReceiver>(activity, "iPhoneAclReceiver").onReceive(activity,
+            Intent(BluetoothDevice.ACTION_ACL_CONNECTED).putExtra(BluetoothDevice.EXTRA_DEVICE, device))
+    }
+
+    private companion object {
+        const val CHOSEN = "12:34:56:78:9A:BC"
     }
 
     /** Fails every attempt with [status] until the retries stop, checking the screen names [cause] meanwhile. */

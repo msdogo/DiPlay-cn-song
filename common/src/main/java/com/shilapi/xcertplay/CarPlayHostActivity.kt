@@ -6,6 +6,7 @@ import android.content.ActivityNotFoundException
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -642,12 +643,50 @@ open class CarPlayHostActivity : ComponentActivity() {
     private val bluetoothOnReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR) != BluetoothAdapter.STATE_ON) return
-            val retry = pendingReconnect ?: return
-            if (!reconnectScheduled || !reconnectWaitsForBluetooth) return
-            appendLog("Bluetooth turned on; retrying now")
-            mainHandler.removeCallbacks(retry)
-            mainHandler.post(retry)
+            firePendingReconnectNow("Bluetooth turned on")
         }
+    }
+
+    /**
+     * The phone side of the same wait. A driver who switches the iPhone's own Bluetooth back on
+     * expects CarPlay to come back at once, not after the next back-off of up to 30 s. Only the
+     * iPhone chosen in connection setup counts; any other device connecting says nothing about it.
+     */
+    private val iPhoneAclReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action != BluetoothDevice.ACTION_ACL_CONNECTED) return
+            val selected = DiPlayPreferences.phoneAddress(this@CarPlayHostActivity) ?: return
+            // Reading the device needs the runtime permission on Android 12+; without it the
+            // head unit's own Bluetooth event above stays the only wake-up.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                return
+            }
+            val device = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
+            } ?: return
+            val address = runCatching { device.address }.getOrNull() ?: return
+            if (!address.equals(selected, ignoreCase = true)) return
+            firePendingReconnectNow("The chosen iPhone reconnected")
+        }
+    }
+
+    /**
+     * Runs the scheduled retry now instead of at its back-off. Idempotent: the retry clears its own
+     * state when it runs, so several wake-ups inside one wait cannot start several attempts.
+     */
+    private fun firePendingReconnectNow(reason: String) {
+        val retry = pendingReconnect ?: return
+        if (!reconnectScheduled) return
+        // Only a failure that named the phone's reach waits for a Bluetooth event; any other retry
+        // keeps its own back-off.
+        if (!reconnectWaitsForBluetooth) return
+        appendLog("$reason; retrying now")
+        mainHandler.removeCallbacks(retry)
+        mainHandler.post(retry)
     }
     // How often the current controller reached its control loop, and whether a loss came after the
     // last time. A retry scheduled before the count went up leaves the attempt alone only while it is
@@ -861,10 +900,13 @@ open class CarPlayHostActivity : ComponentActivity() {
             return
         }
         val bluetoothState = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
+        val iPhoneAcl = IntentFilter(BluetoothDevice.ACTION_ACL_CONNECTED)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(bluetoothOnReceiver, bluetoothState, Context.RECEIVER_NOT_EXPORTED)
+            registerReceiver(iPhoneAclReceiver, iPhoneAcl, Context.RECEIVER_NOT_EXPORTED)
         } else {
             registerReceiver(bluetoothOnReceiver, bluetoothState)
+            registerReceiver(iPhoneAclReceiver, iPhoneAcl)
         }
         NavigationWidgetUpdater.attach(applicationContext)
         CarPlayCallKeys.install(applicationContext)
@@ -2002,6 +2044,7 @@ open class CarPlayHostActivity : ComponentActivity() {
         }
         CarPlayScreen.destroyed(this)
         runCatching { unregisterReceiver(bluetoothOnReceiver) }
+        runCatching { unregisterReceiver(iPhoneAclReceiver) }
         mainHandler.removeCallbacks(hideTemporarySystemBars)
         dropHeldTouch()
         discardLastPicture()
@@ -6483,7 +6526,11 @@ open class CarPlayHostActivity : ComponentActivity() {
             restartCarPlay("Reconnecting after $reason")
         }
         pendingReconnect = retry
-        reconnectWaitsForBluetooth = englishReason.contains(BluetoothRadioCheck.RADIO_OFF_MARK, true)
+        // A refused RFCOMM link is the same wait as a radio that is off: the phone is out of reach,
+        // and it can come back at any moment, so a Bluetooth event may run this retry early.
+        reconnectWaitsForBluetooth = englishReason.contains(BluetoothRadioCheck.RADIO_OFF_MARK, true) ||
+            englishReason.contains("RFCOMM", ignoreCase = true) ||
+            englishReason.contains("Bluetooth", ignoreCase = true)
         mainHandler.postDelayed(retry, delayMillis)
     }
 

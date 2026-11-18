@@ -3274,7 +3274,11 @@ class CarPlayController(
         private const val PERMISSION_POLL_TIMEOUT_MILLIS = 120_000L
         private const val DEVICE_AVAILABILITY_POLL_INTERVAL_MILLIS = 2_000L
         private const val WIRELESS_HANDOFF_TIMEOUT_MILLIS = 45_000L
-        private const val RFCOMM_CONNECT_TIMEOUT_MILLIS = 15_000L
+        /**
+     * Long enough for a weak link to finish the page and service search, short enough that a phone
+     * whose Bluetooth is off costs one attempt instead of fifteen seconds of a 30 s back-off.
+     */
+    private const val RFCOMM_CONNECT_TIMEOUT_MILLIS = 10_000L
         private const val MAXIMUM_REENUMERATION_ATTEMPTS = 2
         /** An iPhone answers the mode request within about a second; one took six (#335). */
         const val REENUMERATION_WAIT_MILLIS = 10_000L
