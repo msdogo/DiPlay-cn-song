@@ -305,6 +305,14 @@ class WheelKeyService : AccessibilityService() {
                     inCall = calling,
                 )
                 if (carPlayPress != null) {
+                    // While the factory 360 camera covers the screen the press belongs to nobody:
+                    // consuming it keeps the car from acting on it and CarPlay from changing track.
+                    if (CarCameraGate.suppressesMediaKeys) {
+                        if (down && event.repeatCount == 0) {
+                            note("CarPlay media key " + event.keyCode + " ignored: the car camera is in front")
+                        }
+                        return true
+                    }
                     if (down && event.repeatCount == 0) {
                         val sent = controller?.sendMediaButton(carPlayPress) == true
                         note("CarPlay media key " + event.keyCode + ": press " + carPlayPress + " sent=" + sent)

@@ -1890,6 +1890,13 @@ open class CarPlayHostActivity : ComponentActivity() {
             // A media button is a tap, and BYD sends each tap as an instant down/up pair: send once,
             // on the press. The release is swallowed rather than passed on, or BYD's own player would
             // receive an unpaired key.
+            if (CarCameraGate.suppressesMediaKeys) {
+                // The factory 360 camera is over this screen: the press goes nowhere.
+                if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                    appendLog("Media: wheel key ${event.keyCode} ignored; the car camera is in front")
+                }
+                return true
+            }
             if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
                 val sent = controller?.sendMediaButton(mediaPress) == true
                 appendLog("Media: wheel key ${event.keyCode} -> CarPlay $mediaPress sent=$sent")
@@ -2043,6 +2050,7 @@ open class CarPlayHostActivity : ComponentActivity() {
             return
         }
         CarPlayScreen.destroyed(this)
+        CarCameraGate.stop()
         runCatching { unregisterReceiver(bluetoothOnReceiver) }
         runCatching { unregisterReceiver(iPhoneAclReceiver) }
         mainHandler.removeCallbacks(hideTemporarySystemBars)
@@ -5787,6 +5795,7 @@ open class CarPlayHostActivity : ComponentActivity() {
                         else reconnectAfterLoss("Cluster small-window navi ${if (smallWindowActive()) "on" else "off"}")
                     }
                     if (menuOpen) return@runOnUiThread
+                    CarCameraGate.start(this@CarPlayHostActivity)
                     appendLog("AirPlay session active")
                 }
             }
@@ -5819,6 +5828,7 @@ open class CarPlayHostActivity : ComponentActivity() {
                     if (controllerGeneration != restartGeneration || startupRetryStopped) return@runOnUiThread
                     startupRetryBudget.disconnected()
                     activeAirPlaySession = null
+                    CarCameraGate.stop()
                     clusterSurface?.let { sink?.clearSurface(SCREEN_TYPE_ALT, it) }
                     clearIphoneCornerMask()
                     CarPlayBackgroundSession.active = false

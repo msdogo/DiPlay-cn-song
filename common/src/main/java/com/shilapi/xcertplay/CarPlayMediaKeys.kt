@@ -419,6 +419,13 @@ internal object CarPlayMediaKeys {
     }
 
     private fun send(index: Int, source: String) {
+        // The factory 360 camera covers CarPlay without taking the media keys away: a press there
+        // would change the iPhone's track behind the driver's back. Swallowed, not forwarded.
+        if (CarCameraGate.suppressesMediaKeys) {
+            Log.i(TAG, "media key $source ignored: the car camera is in front")
+            WheelKeyLog.note("media key $source ignored: the car camera is in front")
+            return
+        }
         // While the car's video player is on screen the wheel drives it: a CarPlay play/pause would
         // make the iPhone end the video session.
         if (CarPlayVideo.onMediaKey(index)) {
