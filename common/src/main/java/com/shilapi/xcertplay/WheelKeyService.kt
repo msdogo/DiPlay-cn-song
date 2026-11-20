@@ -146,6 +146,7 @@ class WheelKeyService : AccessibilityService() {
         keys.timeOut()
         joystick.end()
         clearDoubleSiri()
+        WheelSiriHold.cancelAll(handler)
         handler.removeCallbacksAndMessages(null)
         super.onDestroy()
     }
@@ -198,9 +199,10 @@ class WheelKeyService : AccessibilityService() {
             CarPlayMediaButton.opensSiriWhileCarPlay(event.keyCode) &&
             !(WheelZoomSettings.siriDoublePress(this) && WheelZoomSettings.isSiriKey(this, key)) &&
             session() != null) {
-            if (!down) {
-                val shortPressIgnored = WheelZoomSettings.siriLongPressOnly(this) && CarPlayMediaButton.isShortVoiceKey(event.keyCode)
-                val sent = !shortPressIgnored && VoiceKeyPair.shared.allowCarPlayKey(event.eventTime) &&
+            if (WheelZoomSettings.siriLongPressOnly(this)) {
+                holdVoiceKey(event, down)
+            } else if (!down) {
+                val sent = VoiceKeyPair.shared.allowCarPlayKey(event.eventTime) &&
                     CarPlayBackgroundSession.snapshot()?.controller?.requestSiri() == true
                 note("CarPlay voice key ${event.keyCode}: Siri sent=$sent")
             }
@@ -329,6 +331,30 @@ class WheelKeyService : AccessibilityService() {
         }
         rearmTimedMode()
         return true
+    }
+
+
+    /**
+     * The voice key is timed here rather than trusted to the head unit's own long-press key: the
+     * firmware decides that threshold, and it differs between builds. A press arms a timer; Siri is
+     * asked for when the hold completes, and a release before then does nothing at all.
+     */
+    private fun holdVoiceKey(event: KeyEvent, down: Boolean) {
+        val holdKey = "voice-${event.deviceId}-${event.keyCode}-${event.scanCode}"
+        if (down) {
+            if (event.repeatCount != 0) return
+            val holdMillis = WheelZoomSettings.siriHoldMillis(this).toLong()
+            val armed = WheelSiriHold.arm(holdKey, handler, holdMillis) {
+                val sent = VoiceKeyPair.shared.allowCarPlayKey(android.os.SystemClock.uptimeMillis()) &&
+                    CarPlayBackgroundSession.snapshot()?.controller?.requestSiri() == true
+                note("CarPlay voice key ${event.keyCode} held ${holdMillis}ms: Siri sent=$sent")
+            }
+            if (armed) note("CarPlay voice key ${event.keyCode} down; Siri waits ${holdMillis}ms")
+        } else {
+            val released = WheelSiriHold.release(holdKey, handler)
+            val held = (event.eventTime - event.downTime).coerceAtLeast(0L)
+            if (released) note("CarPlay voice key ${event.keyCode} released after ${held}ms: no Siri")
+        }
     }
 
     private fun navigationKey(event: KeyEvent): Boolean = navigationKeys.onKey(
@@ -1172,11 +1198,16 @@ object WheelZoomSettings {
     private const val KEY_SIRI_DOUBLE_PRESS_INTERVAL = "siri_double_press_interval"
     private const val KEY_SIRI_TRIGGER_DELAY = "siri_trigger_delay"
     private const val KEY_SIRI_LONG_ONLY = "siri_long_press_only"
+    private const val KEY_SIRI_HOLD_MILLIS = "siri_hold_millis"
     private const val BYD_KEYS = "simulate-keys"
     const val TIMED_MODE_MILLIS = 5_000L
     const val JOYSTICK_IDLE_MILLIS = 15_000L
     val SIRI_DOUBLE_PRESS_INTERVALS = listOf(300, 400, 500, 600, 800, 1_000)
     val SIRI_TRIGGER_DELAYS = listOf(0, 100, 200, 300, 500, 800, 1_000, 1_500)
+
+    /** How long the voice key has to be held before Siri opens, once the long-press-only mode is on. */
+    val SIRI_HOLD_DURATIONS = listOf(500, 800, 1_000, 1_500, 2_000, 2_500, 3_000)
+    const val DEFAULT_SIRI_HOLD_MILLIS = 2_500
     const val DEFAULT_SIRI_DOUBLE_PRESS_INTERVAL_MILLIS = 600
     const val DEFAULT_SIRI_TRIGGER_DELAY_MILLIS = 300
 
@@ -1237,11 +1268,24 @@ object WheelZoomSettings {
         WheelKeyService.settingsChanged()
     }
 
-    /** With this on, only the wheel's long press opens Siri; a short press of the voice key does nothing. */
-    fun siriLongPressOnly(context: Context): Boolean = prefs(context).getBoolean(KEY_SIRI_LONG_ONLY, false)
+    /**
+     * With this on, Siri opens only after the voice key has been held for [siriHoldMillis]. The hold
+     * is timed by DiPlay itself: how long the head unit waits before it sends its own long-press key
+     * differs between firmware builds, so the driver sets the threshold that suits their car.
+     */
+    fun siriLongPressOnly(context: Context): Boolean = prefs(context).getBoolean(KEY_SIRI_LONG_ONLY, true)
 
     fun setSiriLongPressOnly(context: Context, enabled: Boolean) {
         prefs(context).edit().putBoolean(KEY_SIRI_LONG_ONLY, enabled).apply()
+    }
+
+    fun siriHoldMillis(context: Context): Int =
+        prefs(context).getInt(KEY_SIRI_HOLD_MILLIS, DEFAULT_SIRI_HOLD_MILLIS)
+            .takeIf { it in SIRI_HOLD_DURATIONS } ?: DEFAULT_SIRI_HOLD_MILLIS
+
+    fun setSiriHoldMillis(context: Context, value: Int) {
+        require(value in SIRI_HOLD_DURATIONS)
+        prefs(context).edit().putInt(KEY_SIRI_HOLD_MILLIS, value).apply()
     }
 
     fun setSiriKey(context: Context, enabled: Boolean) {

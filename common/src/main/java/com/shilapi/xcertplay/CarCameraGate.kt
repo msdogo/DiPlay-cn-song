@@ -60,9 +60,13 @@ internal object CarCameraGate {
     }
 
     fun stop() {
-        if (!started.compareAndSet(true, false)) return
-        worker?.shutdownNow()
-        worker = null
+        // The state is reset even when no poller was started: a test or a future caller that only
+        // updated the gate must not leave "camera in front" behind for the rest of the process.
+        val wasStarted = started.compareAndSet(true, false)
+        if (wasStarted) {
+            worker?.shutdownNow()
+            worker = null
+        }
         cameraInFront = false
         readable = false
         consumedUpTo = 0L

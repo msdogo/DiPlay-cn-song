@@ -651,6 +651,7 @@
     <string name="wheel_siri_trigger_delay">Retardo para iniciar Siri</string>
     <string name="wheel_siri_long_press_only">Siri solo con pulsación larga</string>
     <string name="wheel_siri_long_press_only_description">Solo una pulsación larga del botón de voz del volante abre Siri. Una pulsación corta no hace nada en DiPlay.</string>
+    <string name="wheel_siri_hold_duration">Tiempo de pulsación para Siri</string>
     <string name="wheel_key_role_back">atrás</string>
     <string name="wheel_key_service_label">Botones del volante de DiPlay</string>
     <string name="wheel_key_service_description">Filtrado opcional de las teclas del volante para el volumen de las indicaciones de navegación, el zoom del mapa del panel, el joystick de CarPlay y los controles de llamada. No se lee el contenido de la pantalla.</string>

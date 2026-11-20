@@ -734,6 +734,7 @@
     <string name="wheel_siri_trigger_delay">Siri trigger delay</string>
     <string name="wheel_siri_long_press_only">Siri on long press only</string>
     <string name="wheel_siri_long_press_only_description">Only a long press of the wheel\'s voice button opens Siri. A short press does nothing in DiPlay.</string>
+    <string name="wheel_siri_hold_duration">Hold time for Siri</string>
     <string name="wheel_key_role_back">back</string>
     <string name="wheel_key_service_label">DiPlay wheel keys</string>
     <string name="wheel_key_service_description">Optional wheel key filtering for navigation volume during spoken guidance, dashboard map zoom, CarPlay joystick and call controls. No screen content is read.</string>

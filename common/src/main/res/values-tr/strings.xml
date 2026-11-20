@@ -712,6 +712,7 @@
     <string name="wheel_siri_trigger_delay">Siri tetikleme gecikmesi</string>
     <string name="wheel_siri_long_press_only">Yalnızca uzun basmada Siri</string>
     <string name="wheel_siri_long_press_only_description">Yalnızca direksiyondaki sesli komut düğmesine uzun basıldığında Siri açılır. Kısa basış DiPlay\'de hiçbir şey yapmaz.</string>
+    <string name="wheel_siri_hold_duration">Siri için basılı tutma süresi</string>
     <string name="wheel_key_role_back">geri</string>
     <string name="wheel_key_service_label">DiPlay direksiyon tuşları</string>
     <string name="wheel_key_service_description">Sesli yönlendirme sırasında navigasyon sesi, gösterge haritası yakınlaştırma, CarPlay kumanda kolu ve arama kontrolleri için isteğe bağlı direksiyon tuşu filtreleme. Ekran içeriği okunmaz.</string>

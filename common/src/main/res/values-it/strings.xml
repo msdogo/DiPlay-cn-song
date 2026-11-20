@@ -725,6 +725,7 @@
     <string name="wheel_siri_trigger_delay">Ritardo di attivazione di Siri</string>
     <string name="wheel_siri_long_press_only">Siri solo con pressione prolungata</string>
     <string name="wheel_siri_long_press_only_description">Solo una pressione prolungata del pulsante vocale del volante apre Siri. Una pressione breve non fa nulla in DiPlay.</string>
+    <string name="wheel_siri_hold_duration">Durata della pressione per Siri</string>
     <string name="wheel_key_role_back">indietro</string>
     <string name="wheel_key_service_label">Tasti del volante DiPlay</string>
     <string name="wheel_key_service_description">Filtraggio facoltativo dei tasti del volante per il volume di navigazione durante la guida vocale, lo zoom della mappa del cruscotto, il joystick di CarPlay e i controlli delle chiamate. Non viene letto alcun contenuto dello schermo.</string>

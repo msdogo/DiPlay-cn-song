@@ -4663,7 +4663,18 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
         // stays reachable, like the controls below, in case the package check misses the car.
         if (byd || WheelZoomSettings.siriLongPressOnly(this)) {
             toggle(card, getString(R.string.wheel_siri_long_press_only), getString(R.string.wheel_siri_long_press_only_description),
-                WheelZoomSettings.siriLongPressOnly(this)) { WheelZoomSettings.setSiriLongPressOnly(this, it) }
+                WheelZoomSettings.siriLongPressOnly(this)) {
+                WheelZoomSettings.setSiriLongPressOnly(this, it)
+                render()
+            }
+            if (WheelZoomSettings.siriLongPressOnly(this)) {
+                val holds = WheelZoomSettings.SIRI_HOLD_DURATIONS
+                choice(card, getString(R.string.wheel_siri_hold_duration),
+                    holds.map { getString(R.string.fps_counter_millis, it) },
+                    holds.indexOf(WheelZoomSettings.siriHoldMillis(this)), reconnects = false) {
+                    WheelZoomSettings.setSiriHoldMillis(this, holds[it])
+                }
+            }
         }
         // Any head unit: a paired keyboard, remote or rotary controller works alongside touch.
         toggle(card, getString(R.string.settings_external_controller), getString(R.string.settings_external_controller_description),

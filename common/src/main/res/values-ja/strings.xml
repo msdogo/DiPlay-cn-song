@@ -746,6 +746,7 @@
     <string name="wheel_siri_trigger_delay">Siri起動遅延</string>
     <string name="wheel_siri_long_press_only">Siriは長押しのみ</string>
     <string name="wheel_siri_long_press_only_description">ステアリングの音声ボタンを長押ししたときだけSiriを起動します。短押しでは、DiPlayは何もしません。</string>
+    <string name="wheel_siri_hold_duration">Siri の長押し時間</string>
     <string name="wheel_key_role_back">戻る</string>
     <string name="wheel_key_service_label">DiPlayステアリングスイッチ</string>
     <string name="wheel_key_service_description">案内時の音量調整、メーター地図の拡大・縮小、CarPlayジョイスティック、通話操作のためのオプションサービスです。</string>

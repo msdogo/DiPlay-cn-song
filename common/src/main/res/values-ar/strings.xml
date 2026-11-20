@@ -651,6 +651,7 @@
     <string name="wheel_siri_trigger_delay">تأخير تشغيل Siri</string>
     <string name="wheel_siri_long_press_only">Siri بالضغط المطوّل فقط</string>
     <string name="wheel_siri_long_press_only_description">يفتح Siri بالضغط المطوّل على زر الصوت في المقود فقط. لا يفعل الضغط القصير شيئًا في DiPlay.</string>
+    <string name="wheel_siri_hold_duration">مدة الضغط المطوّل لـ Siri</string>
     <string name="wheel_key_role_back">رجوع</string>
     <string name="wheel_key_service_label">أزرار المقود في DiPlay</string>
     <string name="wheel_key_service_description">تصفية اختيارية لمفاتيح المقود لضبط صوت الملاحة أثناء الإرشادات الصوتية وتقريب خريطة لوحة العدادات وعصا تحكم CarPlay والتحكم بالمكالمات. لا تتم قراءة محتوى الشاشة.</string>

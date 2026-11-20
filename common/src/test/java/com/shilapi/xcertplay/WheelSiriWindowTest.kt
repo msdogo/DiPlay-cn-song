@@ -178,6 +178,8 @@ class WheelSiriWindowTest {
 
     @Test fun unassignedExistingVoiceKeysKeepTheirReleaseBehavior() {
         WheelZoomSettings.setSiriKey(host, false)
+        // The release path is the non-hold mode; the hold itself is covered by WheelSiriHoldTest.
+        WheelZoomSettings.setSiriLongPressOnly(host, false)
         for (code in listOf(KeyEvent.KEYCODE_VOICE_ASSIST,
             CarPlayMediaButton.KEYCODE_BYD_AUTO_MEDIA_VOICE,
             CarPlayMediaButton.KEYCODE_BYD_AUTO_MEDIA_VOICE_LONG)) {
@@ -187,22 +189,38 @@ class WheelSiriWindowTest {
         verify(controller, times(3)).requestSiri()
     }
 
-    @Test @org.junit.Ignore("CN behavior differs") fun longPressOnlyMakesTheShortVoiceKeyDoNothingAndKeepsTheLongOne() {
+    // The hold is timed by DiPlay: how long the head unit waits before sending its own long-press key
+    // differs between firmware builds, so the driver's threshold decides instead of the key code.
+    @Test fun longPressOnlyWaitsForTheConfiguredHoldBeforeSiri() {
         WheelZoomSettings.setSiriKey(host, false)
         WheelZoomSettings.setSiriLongPressOnly(host, true)
-        val short = CarPlayMediaButton.KEYCODE_BYD_AUTO_MEDIA_VOICE
-        assertTrue(host.dispatchKeyEvent(key(short, true)))
-        assertTrue(host.dispatchKeyEvent(key(short, false)))
+        WheelZoomSettings.setSiriHoldMillis(host, 2_500)
+        val code = CarPlayMediaButton.KEYCODE_BYD_AUTO_MEDIA_VOICE
+
+        assertTrue(host.dispatchKeyEvent(key(code, true)))
+        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(2_400))
         verify(controller, never()).requestSiri()
-        val long = CarPlayMediaButton.KEYCODE_BYD_AUTO_MEDIA_VOICE_LONG
-        assertTrue(host.dispatchKeyEvent(key(long, true)))
-        assertTrue(host.dispatchKeyEvent(key(long, false)))
+
+        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(200))
         verify(controller, times(1)).requestSiri()
+    }
+
+    @Test fun longPressOnlyIgnoresAShortPress() {
+        WheelZoomSettings.setSiriKey(host, false)
+        WheelZoomSettings.setSiriLongPressOnly(host, true)
+        WheelZoomSettings.setSiriHoldMillis(host, 2_500)
+        val code = CarPlayMediaButton.KEYCODE_BYD_AUTO_MEDIA_VOICE
+
+        assertTrue(host.dispatchKeyEvent(key(code, true)))
+        assertTrue(host.dispatchKeyEvent(key(code, false)))
+        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(3_000))
+        verify(controller, never()).requestSiri()
     }
 
     @Test fun assigningALegacyVoiceKeyBetweenDownAndUpKeepsTheOriginalAction() {
         val code = KeyEvent.KEYCODE_VOICE_ASSIST
         WheelZoomSettings.setSiriKey(host, false)
+        WheelZoomSettings.setSiriLongPressOnly(host, false)
         assertTrue(host.dispatchKeyEvent(key(code, true)))
         WheelZoomSettings.assign(host, WheelZoomSettings.Role.SIRI, WheelKey(code, 0, "?"))
         WheelZoomSettings.setSiriKey(host, true)

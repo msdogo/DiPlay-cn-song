@@ -743,6 +743,7 @@
     <string name="wheel_siri_trigger_delay">Siri 실행 지연</string>
     <string name="wheel_siri_long_press_only">길게 눌러야 Siri 실행</string>
     <string name="wheel_siri_long_press_only_description">핸들의 음성 버튼을 길게 누를 때만 Siri가 열립니다. 짧게 누르면 DiPlay에서 아무 동작도 하지 않습니다.</string>
+    <string name="wheel_siri_hold_duration">Siri 길게 누르기 시간</string>
     <string name="wheel_key_role_back">뒤로</string>
     <string name="wheel_key_service_label">DiPlay 핸들 키</string>
     <string name="wheel_key_service_description">음성 안내 중 내비게이션 볼륨, 계기판 지도 확대/축소, CarPlay 조이스틱 및 통화 제어를 위한 선택적 핸들 키 필터링입니다. 화면 콘텐츠는 읽지 않습니다.</string>

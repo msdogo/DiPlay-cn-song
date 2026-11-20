@@ -239,6 +239,7 @@ class WheelKeyServiceTest {
         WheelZoomSettings.setSiriKey(service, true)
         WheelZoomSettings.assign(service, WheelZoomSettings.Role.SIRI, WheelKey(code, 0, "?"))
         WheelZoomSettings.setSiriDoublePress(service, false)
+        WheelZoomSettings.setSiriLongPressOnly(service, false)
         val controller = mock(CarPlayController::class.java)
         `when`(controller.requestSiri()).thenReturn(true)
         CarPlayBackgroundSession.store(controller, mock(AndroidMediaSink::class.java), 1, 1,

@@ -1906,6 +1906,26 @@ open class CarPlayHostActivity : ComponentActivity() {
 
         // Keep DiPlay's existing steering-wheel/voice-key Siri handling intact.
         if (!CarPlayMediaButton.opensSiri(event.keyCode)) return super.dispatchKeyEvent(event)
+        if (WheelZoomSettings.siriLongPressOnly(this)) {
+            // The same hold the wheel key service applies: the head unit's own long-press key is
+            // firmware-dependent, so the driver's threshold is timed here instead.
+            val holdKey = "host-voice-${event.deviceId}-${event.keyCode}-${event.scanCode}"
+            if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                val holdMillis = WheelZoomSettings.siriHoldMillis(this).toLong()
+                val armed = WheelSiriHold.arm(holdKey, mainHandler, holdMillis) {
+                    appendLog("Siri: voice key ${event.keyCode} held ${holdMillis}ms")
+                    requestLegacySiri(event.keyCode)
+                }
+                if (armed) appendLog("Siri: voice key ${event.keyCode} down; Siri waits ${holdMillis}ms")
+            } else if (event.action == KeyEvent.ACTION_UP) {
+                val released = WheelSiriHold.release(holdKey, mainHandler)
+                if (released) {
+                    appendLog("Siri: voice key ${event.keyCode} released after " +
+                        "${(event.eventTime - event.downTime).coerceAtLeast(0L)}ms; not sent")
+                }
+            }
+            return true
+        }
         if (event.action == KeyEvent.ACTION_DOWN) legacySiriPresses.add(physicalKey)
         if (event.action == KeyEvent.ACTION_UP) {
             requestLegacySiri(event.keyCode)
@@ -2051,6 +2071,7 @@ open class CarPlayHostActivity : ComponentActivity() {
         }
         CarPlayScreen.destroyed(this)
         CarCameraGate.stop()
+        WheelSiriHold.cancelAll(mainHandler)
         runCatching { unregisterReceiver(bluetoothOnReceiver) }
         runCatching { unregisterReceiver(iPhoneAclReceiver) }
         mainHandler.removeCallbacks(hideTemporarySystemBars)

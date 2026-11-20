@@ -678,6 +678,7 @@
     <string name="wheel_siri_trigger_delay">Siri 觸發延遲</string>
     <string name="wheel_siri_long_press_only">僅長按開啟 Siri</string>
     <string name="wheel_siri_long_press_only_description">只有長按方向盤語音鍵才會開啟 Siri，短按時 DiPlay 不執行任何動作。</string>
+    <string name="wheel_siri_hold_duration">Siri 長按時間</string>
     <string name="wheel_key_role_back">返回</string>
     <string name="wheel_key_service_label">DiPlay 方向盤按鍵</string>
     <string name="wheel_key_service_description">可選的方向盤按鍵過濾，用於導航播報音量、儀表地圖縮放、CarPlay 搖桿及通話控制。不讀取螢幕內容。</string>
