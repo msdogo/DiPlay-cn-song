@@ -169,7 +169,6 @@ open class CarPlayHostActivity : ComponentActivity() {
     private var doubleSiriFirstPressWasInCall = false
     private var pendingDoubleSiri: PendingAssignedSiriDoublePress? = null
     private var delayedDoubleSiri: PendingAssignedSiriDoublePress? = null
-    private val legacySiriPresses = mutableSetOf<Triple<Int, Int, Int>>()
     private val startupRetryBudget = WirelessStartupRetryBudget()
     private var startupRetryStopped = false
     private var startupRetryButton: View? = null
@@ -1745,12 +1744,24 @@ open class CarPlayHostActivity : ComponentActivity() {
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         val physicalKey = Triple(event.deviceId, event.keyCode, event.scanCode)
         val downOrUp = event.action == KeyEvent.ACTION_DOWN || event.action == KeyEvent.ACTION_UP
-        if (downOrUp && physicalKey in legacySiriPresses) {
-            if (event.action == KeyEvent.ACTION_UP) {
-                legacySiriPresses.remove(physicalKey)
-                requestLegacySiri(event.keyCode)
-            }
-            return true
+        // BYD's spare wheel key: nothing on the car answers it, so a tap and a hold are DiPlay's.
+        if (downOrUp && ExtraWheelKey.handles(event.keyCode)) {
+            val handled = ExtraWheelKey.press(
+                event,
+                mainHandler,
+                WheelZoomSettings.siriHoldMillis(this).toLong(),
+                onShort = {
+                    appendLog("Extra key " + event.keyCode + ": short press")
+                    android.widget.Toast.makeText(this, "1", android.widget.Toast.LENGTH_SHORT).show()
+                },
+                onLong = {
+                    appendLog("Extra key " + event.keyCode + ": long press")
+                    android.widget.Toast.makeText(this, "2", android.widget.Toast.LENGTH_SHORT).show()
+                    val sent = controller?.requestSiri() == true
+                    appendLog("Siri: extra key " + event.keyCode + " sent=" + sent)
+                },
+            )
+            if (handled) return true
         }
         // A release/repeat belongs to its original press even if a call, session or setting changed.
         if (downOrUp && siriKeyPresses.hasConsumedPress(physicalKey)) {
@@ -1887,6 +1898,14 @@ open class CarPlayHostActivity : ComponentActivity() {
                 " carPlayClaimed=" + (mediaPress != null))
         }
         if (downOrUp && mediaPress != null) {
+            // For ten seconds after a Siri long press, next/previous do nothing at all: the driver
+            // is talking to Siri, and a track change is not what they meant.
+            if (ExtraWheelKey.isTrackChange(mediaPress) && ExtraWheelKey.quietAfterSiri()) {
+                if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                    appendLog("Media: wheel key " + event.keyCode + " ignored; a Siri long press just happened")
+                }
+                return true
+            }
             // A media button is a tap, and BYD sends each tap as an instant down/up pair: send once,
             // on the press. The release is swallowed rather than passed on, or BYD's own player would
             // receive an unpaired key.
@@ -1904,38 +1923,13 @@ open class CarPlayHostActivity : ComponentActivity() {
             return true
         }
 
-        // Keep DiPlay's existing steering-wheel/voice-key Siri handling intact.
-        if (!CarPlayMediaButton.opensSiri(event.keyCode)) return super.dispatchKeyEvent(event)
-        if (WheelZoomSettings.siriLongPressOnly(this)) {
-            // The same hold the wheel key service applies: the head unit's own long-press key is
-            // firmware-dependent, so the driver's threshold is timed here instead.
-            val holdKey = "host-voice-${event.deviceId}-${event.keyCode}-${event.scanCode}"
-            if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
-                val holdMillis = WheelZoomSettings.siriHoldMillis(this).toLong()
-                val armed = WheelSiriHold.arm(holdKey, mainHandler, holdMillis) {
-                    appendLog("Siri: voice key ${event.keyCode} held ${holdMillis}ms")
-                    requestLegacySiri(event.keyCode)
-                }
-                if (armed) appendLog("Siri: voice key ${event.keyCode} down; Siri waits ${holdMillis}ms")
-            } else if (event.action == KeyEvent.ACTION_UP) {
-                val released = WheelSiriHold.release(holdKey, mainHandler)
-                if (released) {
-                    appendLog("Siri: voice key ${event.keyCode} released after " +
-                        "${(event.eventTime - event.downTime).coerceAtLeast(0L)}ms; not sent")
-                }
-            }
-            return true
+        // The wheel's own voice keys no longer open Siri on a press of theirs: the spare key above
+        // does that now, so these stay with the car. Their long press still starts the quiet window,
+        // because that is the press the driver holds while talking to the car's own assistant.
+        if (downOrUp) {
+            ExtraWheelKey.observeVoiceKey(event, mainHandler, WheelZoomSettings.siriHoldMillis(this).toLong())
         }
-        if (event.action == KeyEvent.ACTION_DOWN) legacySiriPresses.add(physicalKey)
-        if (event.action == KeyEvent.ACTION_UP) {
-            requestLegacySiri(event.keyCode)
-        }
-        return true
-    }
-
-    private fun requestLegacySiri(keyCode: Int) {
-        val sent = controller?.requestSiri() == true
-        appendLog("Siri: voice key $keyCode sent=$sent")
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {

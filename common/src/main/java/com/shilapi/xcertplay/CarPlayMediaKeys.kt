@@ -426,6 +426,12 @@ internal object CarPlayMediaKeys {
             WheelKeyLog.note("media key $source ignored: the car camera is in front")
             return
         }
+        // A Siri long press just happened: a track change would talk over what the driver asked for.
+        if (ExtraWheelKey.isTrackChange(index) && ExtraWheelKey.quietAfterSiri()) {
+            Log.i(TAG, "media key $source ignored: a Siri long press just happened")
+            WheelKeyLog.note("media key $source ignored: a Siri long press just happened")
+            return
+        }
         // While the car's video player is on screen the wheel drives it: a CarPlay play/pause would
         // make the iPhone end the video session.
         if (CarPlayVideo.onMediaKey(index)) {

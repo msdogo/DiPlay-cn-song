@@ -176,56 +176,43 @@ class WheelSiriWindowTest {
         verify(controller, times(1)).requestSiri()
     }
 
-    @Test fun unassignedExistingVoiceKeysKeepTheirReleaseBehavior() {
+    // The wheel's own voice keys belong to the car again: Siri moved to the spare key (294).
+    @Test fun theWheelsOwnVoiceKeysStayWithTheCar() {
         WheelZoomSettings.setSiriKey(host, false)
-        // The release path is the non-hold mode; the hold itself is covered by WheelSiriHoldTest.
         WheelZoomSettings.setSiriLongPressOnly(host, false)
         for (code in listOf(KeyEvent.KEYCODE_VOICE_ASSIST,
             CarPlayMediaButton.KEYCODE_BYD_AUTO_MEDIA_VOICE,
             CarPlayMediaButton.KEYCODE_BYD_AUTO_MEDIA_VOICE_LONG)) {
-            assertTrue(host.dispatchKeyEvent(key(code, true)))
-            assertTrue(host.dispatchKeyEvent(key(code, false)))
+            assertFalse(host.dispatchKeyEvent(key(code, true)))
+            assertFalse(host.dispatchKeyEvent(key(code, false)))
         }
-        verify(controller, times(3)).requestSiri()
-    }
-
-    // The hold is timed by DiPlay: how long the head unit waits before sending its own long-press key
-    // differs between firmware builds, so the driver's threshold decides instead of the key code.
-    @Test fun longPressOnlyWaitsForTheConfiguredHoldBeforeSiri() {
-        WheelZoomSettings.setSiriKey(host, false)
-        WheelZoomSettings.setSiriLongPressOnly(host, true)
-        WheelZoomSettings.setSiriHoldMillis(host, 2_500)
-        val code = CarPlayMediaButton.KEYCODE_BYD_AUTO_MEDIA_VOICE
-
-        assertTrue(host.dispatchKeyEvent(key(code, true)))
-        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(2_400))
-        verify(controller, never()).requestSiri()
-
-        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(200))
-        verify(controller, times(1)).requestSiri()
-    }
-
-    @Test fun longPressOnlyIgnoresAShortPress() {
-        WheelZoomSettings.setSiriKey(host, false)
-        WheelZoomSettings.setSiriLongPressOnly(host, true)
-        WheelZoomSettings.setSiriHoldMillis(host, 2_500)
-        val code = CarPlayMediaButton.KEYCODE_BYD_AUTO_MEDIA_VOICE
-
-        assertTrue(host.dispatchKeyEvent(key(code, true)))
-        assertTrue(host.dispatchKeyEvent(key(code, false)))
-        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(3_000))
         verify(controller, never()).requestSiri()
     }
 
-    @Test fun assigningALegacyVoiceKeyBetweenDownAndUpKeepsTheOriginalAction() {
+    // Holding the wheel's own voice key does not open Siri either: only the spare key does now,
+    // and its own hold timing is covered by ExtraWheelKeyTest.
+    @Test fun holdingTheWheelsOwnVoiceKeyDoesNotOpenSiri() {
+        WheelZoomSettings.setSiriKey(host, false)
+        WheelZoomSettings.setSiriLongPressOnly(host, true)
+        WheelZoomSettings.setSiriHoldMillis(host, 800)
+        val code = CarPlayMediaButton.KEYCODE_BYD_AUTO_MEDIA_VOICE
+
+        assertFalse(host.dispatchKeyEvent(key(code, true)))
+        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(1_200))
+        assertFalse(host.dispatchKeyEvent(key(code, false)))
+        verify(controller, never()).requestSiri()
+    }
+
+    @Test fun assigningTheVoiceKeyBetweenDownAndUpKeepsItsReleaseWithTheCar() {
         val code = KeyEvent.KEYCODE_VOICE_ASSIST
         WheelZoomSettings.setSiriKey(host, false)
         WheelZoomSettings.setSiriLongPressOnly(host, false)
-        assertTrue(host.dispatchKeyEvent(key(code, true)))
+        assertFalse(host.dispatchKeyEvent(key(code, true)))
         WheelZoomSettings.assign(host, WheelZoomSettings.Role.SIRI, WheelKey(code, 0, "?"))
         WheelZoomSettings.setSiriKey(host, true)
-        assertTrue(host.dispatchKeyEvent(key(code, false)))
-        verify(controller, times(1)).requestSiri()
+        // The release belongs to the press that went to the car, so it goes there too.
+        assertFalse(host.dispatchKeyEvent(key(code, false)))
+        verify(controller, never()).requestSiri()
     }
 
     @Test fun carPlayCallStateBlocksAssignedSiriWhileAndroidModeIsNormal() {

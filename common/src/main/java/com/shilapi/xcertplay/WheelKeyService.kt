@@ -200,7 +200,9 @@ class WheelKeyService : AccessibilityService() {
             !(WheelZoomSettings.siriDoublePress(this) && WheelZoomSettings.isSiriKey(this, key)) &&
             session() != null) {
             if (WheelZoomSettings.siriLongPressOnly(this)) {
-                holdVoiceKey(event, down)
+                // Still watched, so a Siri long press on the wheel's own keys also quiets the
+                // track keys; the press itself stays with the car.
+                ExtraWheelKey.observeVoiceKey(event, handler, WheelZoomSettings.siriHoldMillis(this).toLong())
             } else if (!down) {
                 val sent = VoiceKeyPair.shared.allowCarPlayKey(event.eventTime) &&
                     CarPlayBackgroundSession.snapshot()?.controller?.requestSiri() == true
@@ -307,6 +309,13 @@ class WheelKeyService : AccessibilityService() {
                     inCall = calling,
                 )
                 if (carPlayPress != null) {
+                    // A Siri long press just happened: next/previous stay out of the way for ten seconds.
+                    if (ExtraWheelKey.isTrackChange(carPlayPress) && ExtraWheelKey.quietAfterSiri()) {
+                        if (down && event.repeatCount == 0) {
+                            note("CarPlay media key " + event.keyCode + " ignored: a Siri long press just happened")
+                        }
+                        return true
+                    }
                     // While the factory 360 camera covers the screen the press belongs to nobody:
                     // consuming it keeps the car from acting on it and CarPlay from changing track.
                     if (CarCameraGate.suppressesMediaKeys) {
@@ -334,28 +343,6 @@ class WheelKeyService : AccessibilityService() {
     }
 
 
-    /**
-     * The voice key is timed here rather than trusted to the head unit's own long-press key: the
-     * firmware decides that threshold, and it differs between builds. A press arms a timer; Siri is
-     * asked for when the hold completes, and a release before then does nothing at all.
-     */
-    private fun holdVoiceKey(event: KeyEvent, down: Boolean) {
-        val holdKey = "voice-${event.deviceId}-${event.keyCode}-${event.scanCode}"
-        if (down) {
-            if (event.repeatCount != 0) return
-            val holdMillis = WheelZoomSettings.siriHoldMillis(this).toLong()
-            val armed = WheelSiriHold.arm(holdKey, handler, holdMillis) {
-                val sent = VoiceKeyPair.shared.allowCarPlayKey(android.os.SystemClock.uptimeMillis()) &&
-                    CarPlayBackgroundSession.snapshot()?.controller?.requestSiri() == true
-                note("CarPlay voice key ${event.keyCode} held ${holdMillis}ms: Siri sent=$sent")
-            }
-            if (armed) note("CarPlay voice key ${event.keyCode} down; Siri waits ${holdMillis}ms")
-        } else {
-            val released = WheelSiriHold.release(holdKey, handler)
-            val held = (event.eventTime - event.downTime).coerceAtLeast(0L)
-            if (released) note("CarPlay voice key ${event.keyCode} released after ${held}ms: no Siri")
-        }
-    }
 
     private fun navigationKey(event: KeyEvent): Boolean = navigationKeys.onKey(
         event.action, event.keyCode, event.deviceId, event.downTime, event.repeatCount,
