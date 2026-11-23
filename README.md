@@ -4,7 +4,7 @@
 
 ## 来源
 
-基于 [serein-morii/DiPlay-CN](https://github.com/serein-morii/DiPlay-CN) 修改，其上游为官方 DiPlay `v0.2.22`。当前版本 `1.0.11-cn.1`，包名 `com.diplay.song`。
+基于 [serein-morii/DiPlay-CN](https://github.com/serein-morii/DiPlay-CN) 修改，其上游为官方 DiPlay `v0.2.22`。当前版本 `1.0.12-cn.1`，包名 `com.diplay.song`。
 
 ## 适用车型
 
