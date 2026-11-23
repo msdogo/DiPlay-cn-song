@@ -11,6 +11,7 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.ComponentName
 import android.content.Context
+import android.content.ClipData
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
@@ -233,6 +234,8 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
     private var testToneTrack: AudioTrack? = null
     private var toneStop: Runnable? = null
     private var exportButton: Button? = null
+    private var shareReportsButton: Button? = null
+    private var manageReportsButton: Button? = null
     private var rootScroll: ScrollView? = null
     private var settingsRailScroll: ScrollView? = null
     private var reconnectBar: View? = null
@@ -739,6 +742,8 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
         reconnectBar = null
         readinessCard = null
         exportButton = null
+        shareReportsButton = null
+        manageReportsButton = null
         bydAdbControls = null
         adbSwitches.clear()
         adbStatus = null
@@ -1850,6 +1855,15 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
                 saveReportToDownloads()
             }.apply { isEnabled = !exportInProgress }
             card.addView(exportButton, matchButton(SETTINGS_BUTTON_GAP_DP, 60))
+            shareReportsButton = button(getString(R.string.share_diagnostic_reports), false) {
+                showReportPicker(ReportAction.Share)
+            }.apply { isEnabled = false }
+            card.addView(shareReportsButton, matchButton(SETTINGS_BUTTON_GAP_DP, 60))
+            manageReportsButton = button(getString(R.string.manage_diagnostic_reports), false) {
+                showReportPicker(ReportAction.Delete)
+            }.apply { isEnabled = false }
+            card.addView(manageReportsButton, matchButton(SETTINGS_BUTTON_GAP_DP, 60))
+            refreshReportButtons()
             card.addView(button(getString(R.string.choose_save_location), false) { chooseReportDestination() }, matchButton(SETTINGS_BUTTON_GAP_DP, 60))
             card.addView(button(getString(R.string.settings_report_on_phone), false) { openBackup(SettingsCategory.DIAGNOSTICS) }, matchButton(SETTINGS_BUTTON_GAP_DP, 60))
             val destination = getString(R.string.reports_save_to_downloads_diplay)
@@ -6446,6 +6460,9 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
                 exportButton?.apply { isEnabled = true; text = getString(R.string.save_diagnostic_report) }
                 if (result.isSuccess) {
                     val (savedReport, report) = result.getOrThrow()
+                    // A new report re-enables the share and manage buttons even when the card
+                    // was rendered while the folder was empty.
+                    refreshReportButtons()
                     appDialogBuilder().setTitle(getString(R.string.diagnostic_report_saved))
                         .setMessage(when {
                             savedReport.savedInApp -> getString(R.string.diagnostic_report_saved_in_app)
@@ -6456,13 +6473,7 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
                         .setPositiveButton(getString(R.string.view_diagnostic_report)) { _, _ -> showDiagnosticReport(report) }
                         .setNegativeButton(getString(R.string.done), null)
                         .setNeutralButton(getString(R.string.share)) { _, _ ->
-                            runCatching {
-                                startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
-                                    type = "text/plain"; putExtra(Intent.EXTRA_STREAM, savedReport.uri)
-                                    clipData = android.content.ClipData.newRawUri(getString(R.string.report_clip_label), savedReport.uri)
-                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                }, getString(R.string.share_diagnostic_report)))
-                            }.onFailure { showDiagnosticReport(report) }
+                            shareUris(listOf(savedReport.uri), report)
                         }.show()
                 } else {
                     appDialogBuilder().setTitle(getString(R.string.could_not_save_the_report))
@@ -6472,6 +6483,149 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
                 }
             }
         }, "diplay-export").start()
+    }
+
+    /** Which action the saved-report picker performs. */
+    private enum class ReportAction { Share, Delete }
+
+    /** Enables the share and manage buttons only while at least one report exists on disk. */
+    private fun refreshReportButtons() {
+        val appContext = applicationContext
+        Thread({
+            val reports = runCatching { DiagnosticExportStore.listReports(appContext) }.getOrDefault(emptyList())
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                val hasReports = reports.isNotEmpty()
+                shareReportsButton?.isEnabled = hasReports
+                manageReportsButton?.isEnabled = hasReports
+            }
+        }, "diplay-report-buttons").start()
+    }
+
+    /** One chooser for every share path: a single report keeps ACTION_SEND and its exact old shape. */
+    private fun shareUris(uris: List<Uri>, reportFallback: String? = null) {
+        if (uris.isEmpty()) return
+        runCatching {
+            val send = if (uris.size == 1) {
+                Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_STREAM, uris.single())
+                    clipData = ClipData.newRawUri(getString(R.string.report_clip_label), uris.single())
+                }
+            } else {
+                Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                    type = "text/plain"
+                    putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
+                    clipData = ClipData.newRawUri(getString(R.string.report_clip_label), uris.first()).apply {
+                        uris.drop(1).forEach { addItem(ClipData.Item(it)) }
+                    }
+                }
+            }
+            send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            startActivity(Intent.createChooser(send, getString(R.string.share_diagnostic_report)))
+        }.onFailure {
+            if (reportFallback != null) showDiagnosticReport(reportFallback)
+            else toast(getString(R.string.could_not_save_the_report))
+        }
+    }
+
+    /** Lists every saved report and shares or deletes the ones the driver ticks. */
+    private fun showReportPicker(action: ReportAction) {
+        val appContext = applicationContext
+        Thread({
+            val reports = runCatching { DiagnosticExportStore.listReports(appContext) }.getOrDefault(emptyList())
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                if (reports.isEmpty()) {
+                    toast(getString(R.string.no_saved_diagnostic_reports))
+                    refreshReportButtons()
+                    return@runOnUiThread
+                }
+                showReportList(reports, action)
+            }
+        }, "diplay-report-picker").start()
+    }
+
+    /** Just the file name: it already carries the export time, and a row must stay one line. */
+    private fun reportLabel(entry: DiagnosticExportStore.ReportEntry): String = entry.fileName
+
+    private fun showReportList(reports: List<DiagnosticExportStore.ReportEntry>, action: ReportAction) {
+        val checked = BooleanArray(reports.size)
+        val labels = reports.map(::reportLabel).toTypedArray()
+        var listDialog: AlertDialog? = null
+        val dialog = appDialogBuilder()
+            .setTitle(getString(if (action == ReportAction.Share) R.string.share_diagnostic_reports else R.string.manage_diagnostic_reports))
+            .setMultiChoiceItems(labels, checked) { _, index, isChecked ->
+                checked[index] = isChecked
+                listDialog?.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = checked.any { it }
+            }
+            .setPositiveButton(getString(if (action == ReportAction.Share) R.string.share else R.string.delete), null)
+            .setNegativeButton(getString(R.string.cancel), null)
+            .create()
+        listDialog = dialog
+        dialog.setOnShowListener {
+            val positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            positive.isEnabled = checked.any { it }
+            positive.setOnClickListener {
+                val chosen = reports.filterIndexed { index, _ -> checked[index] }
+                if (chosen.isEmpty()) return@setOnClickListener
+                if (action == ReportAction.Delete) {
+                    confirmPickedDeletions(dialog, chosen)
+                } else {
+                    dialog.dismiss()
+                    shareChosenReports(chosen)
+                }
+            }
+            val neutral = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
+            neutral.setText(R.string.select_all)
+            // A dialog that never called setNeutralButton leaves the button hidden.
+            neutral.visibility = View.VISIBLE
+            neutral.setOnClickListener {
+                val selectAll = checked.any { !it }
+                val list = dialog.listView ?: return@setOnClickListener
+                for (index in checked.indices) {
+                    checked[index] = selectAll
+                    list.setItemChecked(index, selectAll)
+                }
+                positive.isEnabled = checked.any { it }
+            }
+        }
+        dialog.show()
+    }
+
+    private fun shareChosenReports(chosen: List<DiagnosticExportStore.ReportEntry>) {
+        val appContext = applicationContext
+        Thread({
+            val uris = DiagnosticExportStore.shareUris(appContext, chosen)
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                if (uris.isEmpty()) toast(getString(R.string.could_not_save_the_report)) else shareUris(uris)
+            }
+        }, "diplay-report-share").start()
+    }
+
+    private fun confirmPickedDeletions(
+        picker: AlertDialog,
+        chosen: List<DiagnosticExportStore.ReportEntry>,
+    ) {
+        appDialogBuilder()
+            .setTitle(getString(R.string.delete_diagnostic_reports_title, chosen.size))
+            .setMessage(getString(R.string.delete_diagnostic_reports_message))
+            .setPositiveButton(getString(R.string.delete)) { _, _ ->
+                picker.dismiss()
+                val appContext = applicationContext
+                Thread({
+                    val deleted = DiagnosticExportStore.deleteReports(appContext, chosen)
+                    runOnUiThread {
+                        if (isFinishing || isDestroyed) return@runOnUiThread
+                        val message = getString(R.string.diagnostic_reports_deleted, deleted.first, chosen.size)
+                        toast(if (deleted.second == 0) message else "$message · ${deleted.second}")
+                        render()
+                    }
+                }, "diplay-report-delete").start()
+            }
+            .setNegativeButton(getString(R.string.cancel), null)
+            .show()
     }
 
     private fun settingsExportFileName() =

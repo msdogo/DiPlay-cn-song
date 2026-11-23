@@ -2,6 +2,7 @@ package com.shilapi.xcertplay
 
 import android.Manifest
 import android.content.ContentResolver
+import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
@@ -19,6 +20,11 @@ import java.io.IOException
 /** Saves an app-owned report without depending on an OEM's document-picker activity. */
 internal object DiagnosticExportStore {
     private const val TAG = "DiagnosticExport"
+    /** MediaStore keeps the trailing slash; the file API path has none. Query both. */
+    private val DOWNLOADS_PATHS = listOf(
+        Environment.DIRECTORY_DOWNLOADS + "/DiPlay/",
+        Environment.DIRECTORY_DOWNLOADS + "/DiPlay",
+    )
 
     data class SavedReport(
         val uri: Uri,
@@ -170,4 +176,150 @@ internal object DiagnosticExportStore {
             ?: throw IOException("Report destination is unavailable")
         stream.bufferedWriter(Charsets.UTF_8).use { it.write(report) }
     }
+
+    // --- Saved report management (share / delete) -----------------------------------------
+
+    enum class ReportSource { PUBLIC_DOWNLOADS, EXTERNAL, INTERNAL }
+
+    /** One saved report. [file] is null only for a Downloads entry that exists in MediaStore but not on disk. */
+    data class ReportEntry(
+        val fileName: String,
+        val sizeBytes: Long,
+        val modifiedAt: Long,
+        val source: ReportSource,
+        val file: File?,
+        val mediaUri: Uri? = null,
+    )
+
+    private fun reportDirectories(context: Context): List<Pair<ReportSource, File>> = buildList {
+        runCatching { publicDownloadsDirectory() }.getOrNull()?.let { add(ReportSource.PUBLIC_DOWNLOADS to it) }
+        runCatching { context.getExternalFilesDir(null) }.getOrNull()
+            ?.let { add(ReportSource.EXTERNAL to File(it, "diagnostic-reports")) }
+        add(ReportSource.INTERNAL to File(context.filesDir, "diagnostic-reports"))
+    }
+
+    /** Every saved report, newest first. Read-only: nothing is created, pruned or moved. */
+    fun listReports(context: Context): List<ReportEntry> {
+        val entries = mutableListOf<ReportEntry>()
+        val seen = mutableSetOf<String>()
+        for ((source, directory) in reportDirectories(context)) {
+            val files = runCatching { directory.listFiles { file -> file.isFile && file.name.endsWith(".txt") } }
+                .getOrNull() ?: continue
+            for (file in files) {
+                if (!seen.add(source.name + "/" + file.name)) continue
+                entries += ReportEntry(
+                    fileName = file.name,
+                    sizeBytes = runCatching { file.length() }.getOrDefault(0L),
+                    modifiedAt = runCatching { file.lastModified() }.getOrDefault(0L),
+                    source = source,
+                    file = file,
+                )
+            }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            runCatching { mediaStoreReports(context) }.getOrNull()?.forEach { stored ->
+                if (seen.add(ReportSource.PUBLIC_DOWNLOADS.name + "/" + stored.fileName)) entries += stored
+            }
+        }
+        return entries.sortedByDescending { it.modifiedAt }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun mediaStoreReports(context: Context): List<ReportEntry> {
+        val resolver = context.contentResolver
+        val projection = arrayOf(
+            MediaStore.Downloads._ID,
+            MediaStore.Downloads.DISPLAY_NAME,
+            MediaStore.Downloads.SIZE,
+            MediaStore.Downloads.DATE_MODIFIED,
+        )
+        val rows = mutableListOf<ReportEntry>()
+        for (relativePath in DOWNLOADS_PATHS) {
+            resolver.query(
+                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                projection,
+                MediaStore.Downloads.RELATIVE_PATH + "=?",
+                arrayOf(relativePath),
+                null,
+            )?.use { cursor ->
+                while (cursor.moveToNext()) {
+                    val id = cursor.getLong(0)
+                    val name = cursor.getString(1) ?: continue
+                    if (!name.endsWith(".txt")) continue
+                    rows += ReportEntry(
+                        fileName = name,
+                        sizeBytes = cursor.getLong(2),
+                        modifiedAt = cursor.getLong(3) * 1000L,
+                        source = ReportSource.PUBLIC_DOWNLOADS,
+                        file = null,
+                        mediaUri = ContentUris.withAppendedId(MediaStore.Downloads.EXTERNAL_CONTENT_URI, id),
+                    )
+                }
+            }
+        }
+        return rows
+    }
+
+    /** Readable URIs for the chosen reports. A report that cannot be read is skipped, never fatal. */
+    fun shareUris(context: Context, entries: List<ReportEntry>): List<Uri> = entries.mapNotNull { entry ->
+        runCatching { shareUriFor(context, entry) }.getOrNull()
+    }
+
+    private fun shareUriFor(context: Context, entry: ReportEntry): Uri? {
+        val file = entry.file
+        if (file != null && file.isFile) {
+            runCatching { FileProvider.getUriForFile(context, authority(context), file) }.getOrNull()?.let { return it }
+            // A MediaStore-created Download can sit outside the provider's external root; share a copy.
+            val text = runCatching { file.readText(Charsets.UTF_8) }.getOrNull() ?: return null
+            return privateShareCopyUri(context, entry.fileName, text)
+        }
+        val uri = entry.mediaUri ?: return null
+        val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return null
+        if (bytes.isEmpty()) return null
+        return privateShareCopyUri(context, entry.fileName, String(bytes, Charsets.UTF_8))
+    }
+
+    private fun privateShareCopyUri(context: Context, fileName: String, report: String): Uri =
+        saveInDirectory(context, File(context.filesDir, "diagnostic-reports"), fileName, report, savedInApp = true).uri
+
+    /** Deletes the chosen reports. Returns (deleted, failed); nothing outside the report folders is touched. */
+    fun deleteReports(context: Context, entries: List<ReportEntry>): Pair<Int, Int> {
+        var deleted = 0
+        var failed = 0
+        for (entry in entries) {
+            if (runCatching { deleteReport(context, entry) }.getOrDefault(false)) deleted++ else failed++
+        }
+        return deleted to failed
+    }
+
+    private fun deleteReport(context: Context, entry: ReportEntry): Boolean {
+        if (entry.source == ReportSource.PUBLIC_DOWNLOADS && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (runCatching { deleteMediaStoreCopy(context, entry) }.getOrDefault(false)) return true
+        }
+        val file = entry.file
+        if (file != null && file.isFile) return file.delete()
+        return false
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun deleteMediaStoreCopy(context: Context, entry: ReportEntry): Boolean {
+        val resolver = context.contentResolver
+        for (relativePath in DOWNLOADS_PATHS) {
+            var id: Long? = null
+            resolver.query(
+                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                arrayOf(MediaStore.Downloads._ID),
+                MediaStore.Downloads.RELATIVE_PATH + "=? AND " + MediaStore.Downloads.DISPLAY_NAME + "=?",
+                arrayOf(relativePath, entry.fileName),
+                null,
+            )?.use { cursor -> if (cursor.moveToFirst()) id = cursor.getLong(0) }
+            val found = id ?: continue
+            val uri = ContentUris.withAppendedId(MediaStore.Downloads.EXTERNAL_CONTENT_URI, found)
+            if (resolver.delete(uri, null, null) > 0) return true
+        }
+        return false
+    }
+
+    private fun authority(context: Context) = context.packageName + ".diagnostic-reports"
 }
+

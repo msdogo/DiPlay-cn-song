@@ -43,6 +43,14 @@
     <string name="clipboard_usage_access">DiPlayの使用状況へのアクセス</string>
     <string name="report_clip_label">診断レポート</string>
     <string name="share_diagnostic_report">診断レポートを共有</string>
+    <string name="share_diagnostic_reports">診断レポートをまとめて共有</string>
+    <string name="manage_diagnostic_reports">保存したレポートの管理</string>
+    <string name="select_all">すべて選択</string>
+    <string name="delete">削除</string>
+    <string name="delete_diagnostic_reports_title">%1$d 件のレポートを削除しますか？</string>
+    <string name="delete_diagnostic_reports_message">保存した診断レポートがこのヘッドユニットから削除されます。元に戻せません。</string>
+    <string name="diagnostic_reports_deleted">%1$d / %2$d 件のレポートを削除しました</string>
+    <string name="no_saved_diagnostic_reports">保存された診断レポートはありません</string>
     <string name="setup_error_auth">CarPlayの認証情報を読み込めませんでした。完全版のDiPlayを上書きインストールしてください。アンインストールやホットスポットの変更は不要です。</string>
     <string name="hotspot_state_stopped">停止</string>
     <string name="hotspot_state_off">オフ</string>

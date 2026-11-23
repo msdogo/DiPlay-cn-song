@@ -38,6 +38,14 @@
     <string name="clipboard_usage_access">DiPlay Usage Access</string>
     <string name="report_clip_label">Diagnostic report</string>
     <string name="share_diagnostic_report">Share diagnostic report</string>
+    <string name="share_diagnostic_reports">Share diagnostic reports</string>
+    <string name="manage_diagnostic_reports">Manage saved reports</string>
+    <string name="select_all">Select all</string>
+    <string name="delete">Delete</string>
+    <string name="delete_diagnostic_reports_title">Delete %1$d reports?</string>
+    <string name="delete_diagnostic_reports_message">Saved diagnostic reports will be removed from this head unit. This cannot be undone.</string>
+    <string name="diagnostic_reports_deleted">Deleted %1$d of %2$d reports</string>
+    <string name="no_saved_diagnostic_reports">No saved diagnostic reports</string>
     <string name="setup_error_auth">CarPlay authentication could not be loaded. Install the complete DiPlay build over this app. No uninstall or hotspot change is needed.</string>
     <string name="hotspot_state_stopped">stopped</string>
     <string name="hotspot_state_off">off</string>
