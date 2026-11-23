@@ -27,6 +27,16 @@ object CarHotspotSettings {
         enabled(context) && wireless && mode == WirelessHotspotMode.MANUAL
 
     /**
+     * On by default: a phone that stopped rejoining the car hotspot leaves every later attempt with the
+     * same dead network, and cycling it is the only recovery the car offers. The switch stays visible so
+     * a driver who prefers the shorter outage can turn it off.
+     */
+    fun cycleOnDisconnect(context: Context): Boolean = prefs(context).getBoolean("cycle_on_disconnect", true)
+
+    fun setCycleOnDisconnect(context: Context, enabled: Boolean) =
+        prefs(context).edit().putBoolean("cycle_on_disconnect", enabled).apply()
+
+    /**
      * Set when the driver connects although Android reports the car hotspot off. Some firmware reports it off
      * while the car's own hotspot is on (Geely Galaxy E8, #604), and DiPlay then refused every connection.
      */

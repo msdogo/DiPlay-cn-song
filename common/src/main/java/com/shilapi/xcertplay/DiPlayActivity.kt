@@ -414,6 +414,7 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
             updateStage = UpdateStage.AVAILABLE
         }
         enforceInterfaceSize()
+        logCycleSwitchState("startup")
         refreshAppearance()
         rememberLaunchAppearance()
         languagePreferenceAtCreate = AppLocale.preference(this)
@@ -1417,6 +1418,14 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
         content.addView(label(subtitle, 16, MUTED).apply { setPadding(0, dp(6), 0, dp(20)) })
     }
 
+    /** Reports what the cycle switch will show, and whether a stored value already disagrees. */
+    private fun logCycleSwitchState(where: String) {
+        val raw = getSharedPreferences("diplay_car_hotspot", MODE_PRIVATE).all
+        android.util.Log.i("DiPlay-Hotspot",
+            "cycle switch render($where): value=${CarHotspotSettings.cycleOnDisconnect(this)} " +
+                "stored=${raw["cycle_on_disconnect"]} keys=${raw.keys}")
+    }
+
     private fun connectionSettings(content: LinearLayout) {
         settingsPageTitle(content, getString(R.string.connection), getString(R.string.settings_connection_summary))
         renderSections(content, SettingsInformationArchitecture.sectionsByCategory.getValue(SettingsCategory.CONNECTION))
@@ -1847,6 +1856,17 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
                     }
                 }
                 card.addView(label(getString(R.string.settings_mfi_target_description), 14, MUTED))
+            }
+            // Only the car's own hotspot can be cycled; the other modes own their network elsewhere.
+            if (AirPlayPersistence.loadWirelessHotspotMode(this) == WirelessHotspotMode.MANUAL) {
+                searchIndexSink?.add(getString(R.string.cycle_car_hotspot_on_loss))
+                logCycleSwitchState("settings")
+                toggle(
+                    card,
+                    getString(R.string.cycle_car_hotspot_on_loss),
+                    getString(R.string.cycle_car_hotspot_on_loss_description),
+                    CarHotspotSettings.cycleOnDisconnect(this),
+                ) { enabled -> CarHotspotSettings.setCycleOnDisconnect(this, enabled) }
             }
         }
         filteredSection(content, SettingsSection.DIAGNOSTICS,
@@ -4023,6 +4043,21 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
                     setPadding(0, dp(12), 0, 0)
                 })
             }
+            // An unexpected drop on the car's own hotspot can leave the iPhone unable to rejoin.
+            searchIndexSink?.add(getString(R.string.cycle_car_hotspot_on_loss))
+            logCycleSwitchState("link")
+            parent.addView(SettingsWidgets.createSwitchRow(
+                context = this,
+                label = getString(R.string.cycle_car_hotspot_on_loss),
+                description = getString(R.string.cycle_car_hotspot_on_loss_description),
+                labelSizeSp = 22f,
+                checked = CarHotspotSettings.cycleOnDisconnect(this),
+                theme = SettingsTheme.card(palette),
+                contentDescription = getString(R.string.cycle_car_hotspot_on_loss),
+                onChanged = { enabled ->
+                    CarHotspotSettings.setCycleOnDisconnect(this@DiPlayActivity, enabled)
+                },
+            ).rowView)
             val join = hotspotJoinControls ?: HotspotJoinControls(this,
                 { CarPlayBackgroundSession.hasSession() }, beforeAction = { startupHotspotCancelled = true },
                 labelFactory = { label(it, 15, MUTED) }, buttonFactory = { title, click -> button(title, false, click) })

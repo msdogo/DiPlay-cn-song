@@ -560,6 +560,10 @@ open class CarPlayHostActivity : ComponentActivity() {
     private var remoteMfiToken = ""
     private var wirelessPermissionsReady = false
     private var wirelessHotspotMode = WirelessHotspotMode.WIFI_P2P
+    private var cycleHotspotOnDisconnect = false
+    private var cycleHotspotRow: View? = null
+    /** Bumped by every ACL_CONNECTED of the chosen iPhone; a hotspot cycle waits for a new one. */
+    @Volatile private var phoneBluetoothArrivals = 0L
     private var manualHotspotSsid = ""
     private var existingWifiSsid = ""
     private var existingWifiPassphrase = ""
@@ -669,6 +673,7 @@ open class CarPlayHostActivity : ComponentActivity() {
             } ?: return
             val address = runCatching { device.address }.getOrNull() ?: return
             if (!address.equals(selected, ignoreCase = true)) return
+            phoneBluetoothArrivals += 1
             firePendingReconnectNow("The chosen iPhone reconnected")
         }
     }
@@ -1049,6 +1054,7 @@ open class CarPlayHostActivity : ComponentActivity() {
         remoteMfiToken = AirPlayPersistence.loadRemoteMfiToken(this)
         locationReportingEnabled = AirPlayPersistence.loadLocationReportingEnabled(this)
         wirelessHotspotMode = AirPlayPersistence.loadWirelessHotspotMode(this)
+        cycleHotspotOnDisconnect = com.shilapi.xcertplay.network.CarHotspotSettings.cycleOnDisconnect(this)
         existingWifiSsid = AirPlayPersistence.loadExistingWifiSsid(this)
         existingWifiPassphrase = AirPlayPersistence.loadExistingWifiPassphrase(this)
         existingWifiInterface = AirPlayPersistence.loadExistingWifiInterface(this)
@@ -3700,8 +3706,19 @@ open class CarPlayHostActivity : ComponentActivity() {
                 description = getString(R.string.connect_when_iphone_bluetooth_connects_description),
             ) { checked -> overlayConnectOnBluetooth = checked },
         )
+        val cycleRow = settingsSwitchRow(
+            label = getString(R.string.cycle_car_hotspot_on_loss),
+            checked = cycleHotspotOnDisconnect,
+            description = getString(R.string.cycle_car_hotspot_on_loss_description),
+        ) { checked ->
+            cycleHotspotOnDisconnect = checked
+            appendLog("Car hotspot cycle after an unexpected loss ${if (checked) "enabled" else "disabled"}")
+        }
+        cycleHotspotRow = cycleRow
+        updateCycleHotspotRow()
         return listOf(
-            overlayCard(getString(R.string.wireless_carplay_2), null, listOf(wirelessRow, buildHotspotModeSection(), statusBox)),
+            overlayCard(getString(R.string.wireless_carplay_2), null,
+                listOf(wirelessRow, buildHotspotModeSection(), cycleRow, statusBox)),
             overlayCard(getString(R.string.automatic_connection), null, autoRows),
             overlayCard(null, null, listOf(buildMfiTargetSection())),
         )
@@ -4052,6 +4069,7 @@ open class CarPlayHostActivity : ComponentActivity() {
         AirPlayPersistence.saveRemoteMfiServer(this, remoteMfiServer)
         AirPlayPersistence.saveRemoteMfiToken(this, remoteMfiToken)
         AirPlayPersistence.saveWirelessHotspotMode(this, wirelessHotspotMode)
+        com.shilapi.xcertplay.network.CarHotspotSettings.setCycleOnDisconnect(this, cycleHotspotOnDisconnect)
         AirPlayPersistence.saveExistingWifiCredentials(this, existingWifiSsid, existingWifiPassphrase)
         AirPlayPersistence.saveExistingWifiInterface(this, existingWifiInterface)
         AirPlayPersistence.saveManualHotspotSsid(this, manualHotspotSsid)
@@ -4121,7 +4139,7 @@ open class CarPlayHostActivity : ComponentActivity() {
     /** Mirrors [persistMenuSettings]: a field staged there belongs here too. */
     private fun menuSettingsSignature(): Int = listOf(
         gestureFingerCount, swipeOpensFullSettings, wirelessEnabled, mfiTarget, mfiI2cPath, remoteMfiServer, remoteMfiToken,
-        wirelessHotspotMode, existingWifiSsid, existingWifiPassphrase, existingWifiInterface,
+        wirelessHotspotMode, cycleHotspotOnDisconnect, existingWifiSsid, existingWifiPassphrase, existingWifiInterface,
         manualHotspotSsid,
         manualHotspotPassphrase, manualHotspotBand, manualHotspotChannel, manualHotspotSecurity,
         locationReportingEnabled, autoStartOnBoot, advancedAudioChannelMapping, displayScaleTenths,
@@ -5078,7 +5096,14 @@ open class CarPlayHostActivity : ComponentActivity() {
         return section
     }
 
+    /** The cycle switch is about the car's own hotspot, so it only shows for that mode. */
+    private fun updateCycleHotspotRow() {
+        cycleHotspotRow?.visibility =
+            if (wirelessHotspotMode == WirelessHotspotMode.MANUAL) View.VISIBLE else View.GONE
+    }
+
     private fun updateManualHotspotFields() {
+        updateCycleHotspotRow()
         existingWifiFields?.visibility = if (wirelessHotspotMode == WirelessHotspotMode.EXISTING_WIFI) View.VISIBLE else View.GONE
         existingWifiErrorView?.visibility = View.GONE
         val visible = wirelessHotspotMode == WirelessHotspotMode.MANUAL
@@ -5857,7 +5882,9 @@ open class CarPlayHostActivity : ComponentActivity() {
                     ClusterActivityOutput.setStreamActive(false)
                     setConnectionStage(R.string.carplay_session_ended_reconnecting)
                     appendLog("AirPlay session ended; reconnecting from scratch")
-                    reconnectAfterLoss("AirPlay session ended")
+                    // The cycle owns the recovery when it is on: it restarts CarPlay itself once
+                    // the hotspot is back, so the two must not race for the AP.
+                    if (!maybeCycleCarHotspot()) reconnectAfterLoss("AirPlay session ended")
                 }
             }
 
@@ -6479,6 +6506,84 @@ open class CarPlayHostActivity : ComponentActivity() {
             return
         }
         startCarPlay(size)
+    }
+
+    /**
+     * An unexpected wireless loss on the built-in car hotspot can leave the iPhone unable to rejoin.
+     * When the driver opted in, take the AP down, wait for the phone's Bluetooth link to come back and
+     * start the AP again, so the reconnect that follows finds a fresh network.
+     *
+     * Runs on its own thread and returns true when it took the recovery over, so the caller leaves
+     * the reconnect to it: the cycle restarts CarPlay after the hotspot is back. Every step is
+     * bounded and the AP is started again even when the phone never returns.
+     */
+    private fun maybeCycleCarHotspot(): Boolean {
+        if (CarPlayBackgroundSession.expectedStop) {
+            appendLog("Car hotspot cycle skipped: the driver disconnected")
+            return false
+        }
+        val mode = AirPlayPersistence.loadWirelessHotspotMode(this)
+        val enabled = com.shilapi.xcertplay.network.CarHotspotSettings.cycleOnDisconnect(this)
+        if (!enabled || mode != WirelessHotspotMode.MANUAL) return false
+        val arrivals = phoneBluetoothArrivals
+        val generation = restartGeneration
+        Thread({
+            val adb = com.shilapi.xcertplay.adb.LocalAdb(com.shilapi.xcertplay.adb.AdbKeys.load(applicationContext))
+            adb.use { client ->
+                val access = runCatching { client.connect(mayAsk = false) }.getOrDefault(com.shilapi.xcertplay.adb.LocalAdb.Access.UNREACHABLE)
+                if (!com.shilapi.xcertplay.network.CarHotspotCycle.shouldCycle(mode, enabled,
+                        access == com.shilapi.xcertplay.adb.LocalAdb.Access.READY)) {
+                    appendLog("Car hotspot cycle skipped: ADB access=$access")
+                    return@use
+                }
+                val now = System.nanoTime()
+                val stopDeadline = now + CYCLE_STOP_BUDGET_MILLIS * 1_000_000L
+                val arrivalDeadline = now + CYCLE_ARRIVAL_BUDGET_MILLIS * 1_000_000L
+                val restartDeadline = arrivalDeadline + CYCLE_RESTART_BUDGET_MILLIS * 1_000_000L
+                val cancelled = {
+                    shuttingDown.get() || generation != restartGeneration ||
+                        !CarPlayBackgroundSession.isOwner(this@CarPlayHostActivity)
+                }
+                appendLog("Car hotspot cycle: stopping the AP before the reconnect")
+                val stopped = com.shilapi.xcertplay.network.CarHotspotCycle.stop(
+                    stopDeadline,
+                    cancelled,
+                    state = { com.shilapi.xcertplay.network.CarHotspotStatus.isEnabled(applicationContext) },
+                    shell = { command, timeout -> client.shell(command, timeout) },
+                    log = ::appendLog,
+                )
+                if (!stopped) {
+                    appendLog("Car hotspot cycle abandoned: the AP is still up")
+                    retryReconnectAfterAbandonedCycle(generation)
+                    return@use
+                }
+                com.shilapi.xcertplay.network.CarHotspotCycle.awaitArrival(
+                    arrivalDeadline,
+                    cancelled,
+                    arrived = { phoneBluetoothArrivals != arrivals },
+                    log = ::appendLog,
+                )
+                if (cancelled()) {
+                    appendLog("Car hotspot cycle: restart deferred to the normal connection")
+                    return@use
+                }
+                appendLog("Car hotspot cycle: starting the AP again")
+                com.shilapi.xcertplay.network.CarHotspotCycle.restart(applicationContext, restartDeadline, cancelled, ::appendLog)
+                if (cancelled()) return@use
+                appendLog("Car hotspot cycle done; reconnecting")
+                runOnUiThread {
+                    if (shuttingDown.get() || generation != restartGeneration) return@runOnUiThread
+                    restartCarPlay("Car hotspot cycled after a loss")
+                }
+            }
+        }, "diplay-hotspot-cycle").start()
+        return true
+    }
+
+    /** A cycle that could not stop the AP must not swallow the reconnect it took over. */
+    private fun retryReconnectAfterAbandonedCycle(generation: Int) = runOnUiThread {
+        if (shuttingDown.get() || generation != restartGeneration) return@runOnUiThread
+        reconnectAfterLoss("Car hotspot cycle abandoned")
     }
 
     private fun reconnectAfterLoss(
@@ -7399,6 +7504,10 @@ open class CarPlayHostActivity : ComponentActivity() {
         const val PICTURE_COPY_WAIT_MILLIS = 150L
         /** How long the side panel tab's pill (and the panel's grip) shows when it appears or is tapped. */
         const val SIDE_PANEL_TAB_HINT_MILLIS = 10_000L
+        /** Budgets for the post-loss car hotspot cycle: stop the AP, wait for the phone, start it. */
+        const val CYCLE_STOP_BUDGET_MILLIS = 15_000L
+        const val CYCLE_ARRIVAL_BUDGET_MILLIS = 60_000L
+        const val CYCLE_RESTART_BUDGET_MILLIS = 45_000L
         const val TAG = "xcertplay-usb"
         const val SCREEN_TYPE_MAIN = 110
         const val SCREEN_TYPE_ALT = 111
@@ -7499,6 +7608,11 @@ internal fun shorterWindowKeepsTheCanvas(display: CarPlaySessionDisplay, width: 
 /** Process-local hand-off for keeping the CarPlay session alive while no Activity is visible. */
 internal object CarPlayBackgroundSession {
     @Volatile var active = false
+    /**
+     * Set while the driver's own Disconnect runs, cleared when a session is stored. The loss
+     * handler reads it to tell a wanted stop from an unexpected one.
+     */
+    @Volatile var expectedStop = false
     @Volatile var callPopupReady = false
     /** The running session's hotspot: a host that adopts the session never saw its HotspotReady. */
     @Volatile var hotspotReady: CarPlayStatus.HotspotReady? = null
@@ -7514,7 +7628,7 @@ internal object CarPlayBackgroundSession {
         synchronized(this) {
             if (stopping) { stopWaiters.add(completion); return }
             action = stopAction
-            if (action != null) { stopping = true; stopWaiters.add(completion) }
+            if (action != null) { stopping = true; expectedStop = true; stopWaiters.add(completion) }
         }
         if (action == null) { completion(); return }
         action.invoke {
@@ -7559,6 +7673,7 @@ internal object CarPlayBackgroundSession {
         }
         this.stopAction = stop
         this.owner = owner
+        this.expectedStop = false
         this.controller = controller
         this.sink = sink
         this.width = width
