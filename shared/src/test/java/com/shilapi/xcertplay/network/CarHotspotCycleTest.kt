@@ -158,4 +158,72 @@ class CarHotspotCycleTest {
         assertFalse(reached)
         assertTrue(log.any { it.contains("did not return") })
     }
+
+    @Test
+    fun stopFallsBackToTheShellHelperWhenTheFirmwareListsNoCommand() {
+        val log = mutableListOf<String>()
+        var apOn = true
+        val stopped = CarHotspotCycle.stop(
+            deadline = System.nanoTime() + 5_000_000_000L,
+            cancelled = { false },
+            state = { apOn },
+            shell = { command, _ ->
+                when {
+                    command == "dumpsys wifi" -> null
+                    command.startsWith("cmd ") -> "start-tethering wifi"
+                    command.endsWith(" stop") -> {
+                        apOn = false
+                        "DIPLAY_HOTSPOT_STOP_V1|stopped"
+                    }
+                    else -> null
+                }
+            },
+            log = { log += it },
+            helper = "CLASSPATH='/data/app/base.apk' app_process /system/bin Helper stop",
+        )
+        assertTrue(stopped)
+        assertTrue(log.any { it.contains("shell stop request stopped") })
+        assertTrue(log.any { it.contains("AP off state confirmed") })
+    }
+
+    @Test
+    fun stopGivesUpWhenTheShellHelperRefuses() {
+        val log = mutableListOf<String>()
+        val stopped = CarHotspotCycle.stop(
+            deadline = System.nanoTime() + 5_000_000_000L,
+            cancelled = { false },
+            state = { true },
+            shell = { command, _ ->
+                when {
+                    command == "dumpsys wifi" -> null
+                    command.startsWith("cmd ") -> "start-tethering wifi"
+                    command.endsWith(" stop") -> "DIPLAY_HOTSPOT_STOP_V1|unsupported"
+                    else -> null
+                }
+            },
+            log = { log += it },
+            helper = "CLASSPATH='/data/app/base.apk' app_process /system/bin Helper stop",
+        )
+        assertFalse(stopped)
+        assertTrue(log.any { it.contains("shell stop request failed") })
+    }
+
+    @Test
+    fun aMissingHelperReplyIsNotMistakenForSuccess() {
+        val stopped = CarHotspotCycle.stop(
+            deadline = System.nanoTime() + 5_000_000_000L,
+            cancelled = { false },
+            state = { true },
+            shell = { command, _ ->
+                when {
+                    command == "dumpsys wifi" -> null
+                    command.startsWith("cmd ") -> "start-tethering wifi"
+                    else -> "no protocol line here"
+                }
+            },
+            log = {},
+            helper = "CLASSPATH='/data/app/base.apk' app_process /system/bin Helper stop",
+        )
+        assertFalse(stopped)
+    }
 }

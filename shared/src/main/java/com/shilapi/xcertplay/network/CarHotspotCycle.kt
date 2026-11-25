@@ -11,9 +11,11 @@ import com.shilapi.xcertplay.orchestration.WirelessHotspotMode
  * state. Only the built-in car hotspot can be cycled this way: the Wi-Fi Direct and local-only
  * backends own their group, and "Existing Wi-Fi" belongs to the car.
  *
- * Everything here reads the AP state before it changes anything. A firmware whose "cmd connectivity"
- * or "cmd tethering" help lists no stop command is left alone; a blind toggle could take the car's
- * station connection with it.
+ * Everything here reads the AP state before it changes anything. When the firmware's own help lists
+ * no stop command, the shell helper ([CarHotspotStartMain]) stops the AP through the platform's
+ * tethering service, the same way startup already works around a firmware without a start command.
+ * A firmware that answers neither is left alone; a blind toggle could take the car's station
+ * connection with it.
  */
 object CarHotspotCycle {
     /** How long the AP may take to report off after the firmware accepted the request. */
@@ -63,6 +65,7 @@ object CarHotspotCycle {
         state: () -> Boolean?,
         shell: (String, Int) -> String?,
         log: (String) -> Unit,
+        helper: String? = null,
     ): Boolean {
         val stopDeadline = minOf(deadline, System.nanoTime() + STOP_TIMEOUT_MILLIS * 1_000_000L)
         fun remaining() = ((stopDeadline - System.nanoTime()) / 1_000_000L).coerceAtMost(30_000).toInt()
@@ -84,20 +87,29 @@ object CarHotspotCycle {
         if (stopped()) return false
         if (command == null) {
             log("car hotspot cycle: firmware lists no hotspot stop command in cmd connectivity/tethering help")
-            return false
+            if (helper == null) return false
+            // #616: the same head unit family has no start command either; the shell helper covers both.
+            val reply = CarHotspotStartMain.parseStop(read(helper))
+            if (stopped()) return false
+            if (!CarHotspotStartMain.stopAccepted(reply)) {
+                log("car hotspot cycle: shell stop request failed: ${reply ?: "no reply"}")
+                return false
+            }
+            log("car hotspot cycle: shell stop request $reply; waiting for AP off state")
+        } else {
+            // No exit-code protocol here: the polling below is the proof. A command that silently did
+            // nothing simply never reports the AP off and the cycle is abandoned.
+            val output = read("$command 2>&1")
+            if (stopped()) return false
+            if (output != null && rejected(output)) {
+                log(
+                    "car hotspot cycle: firmware rejected '$command': " +
+                        output.orEmpty().lineSequence().map(String::trim).firstOrNull { it.isNotEmpty() }.orEmpty().take(120),
+                )
+                return false
+            }
+            log("car hotspot cycle: firmware ADB stop request accepted; waiting for AP off state")
         }
-        // No exit-code protocol here: the polling below is the proof. A command that silently did
-        // nothing simply never reports the AP off and the cycle is abandoned.
-        val output = read("$command 2>&1")
-        if (stopped()) return false
-        if (output != null && rejected(output)) {
-            log(
-                "car hotspot cycle: firmware rejected '$command': " +
-                    output.orEmpty().lineSequence().map(String::trim).firstOrNull { it.isNotEmpty() }.orEmpty().take(120),
-            )
-            return false
-        }
-        log("car hotspot cycle: firmware ADB stop request accepted; waiting for AP off state")
         while (!stopped()) {
             if (observed() == false) {
                 log("car hotspot cycle: AP off state confirmed after local ADB request")

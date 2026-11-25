@@ -30,8 +30,10 @@ object CarHotspotStartMain {
     internal const val HEADER = "DIPLAY_HOTSPOT_START_V1"
     internal const val APCONFIG_HEADER = "DIPLAY_HOTSPOT_APCONFIG_V1"
     internal const val APCONFIG_READ_HEADER = "DIPLAY_HOTSPOT_APCONFIG_READ_V1"
+    internal const val STOP_HEADER = "DIPLAY_HOTSPOT_STOP_V1"
     private const val APCONFIG_COMMAND = "apconfig"
     private const val APCONFIG_READ_COMMAND = "apconfig-read"
+    private const val STOP_COMMAND = "stop"
     private const val DEADLINE_MS = 10_000L
     private const val RESULT_WAIT_MS = 5_000L
     private const val TETHERING_WIFI = 0
@@ -41,6 +43,7 @@ object CarHotspotStartMain {
     @JvmStatic fun main(args: Array<String>) {
         val apConfig = args.firstOrNull() == APCONFIG_COMMAND
         val apConfigRead = args.firstOrNull() == APCONFIG_READ_COMMAND
+        val stop = args.firstOrNull() == STOP_COMMAND
         // A stuck Binder call must not leave a privileged helper running.
         Thread({ Thread.sleep(DEADLINE_MS); exitProcess(2) }, "hotspot-start-helper-deadline")
             .apply { isDaemon = true; start() }
@@ -48,6 +51,11 @@ object CarHotspotStartMain {
             when {
                 apConfig -> apConfig(args.drop(1).toTypedArray())
                 apConfigRead -> apConfigRead()
+                stop -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    stopWithTetheringManager()
+                } else {
+                    stopWithConnectivity()
+                }
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> startWithTetheringManager()
                 else -> startWithConnectivity()
             }
@@ -57,6 +65,7 @@ object CarHotspotStartMain {
         val header = when {
             apConfigRead -> APCONFIG_READ_HEADER
             apConfig -> APCONFIG_HEADER
+            stop -> STOP_HEADER
             else -> HEADER
         }
         println("$header|$result")
@@ -240,6 +249,40 @@ object CarHotspotStartMain {
         }
     }
 
+    /**
+     * Android 7.0–10: IConnectivityManager.stopTethering takes the same integer type startTethering does.
+     * The call returns no result code, so the caller confirms the off state by polling the AP.
+     */
+    private fun stopWithConnectivity(): String {
+        val binder = service("connectivity") ?: return "unsupported"
+        val service = Class.forName("android.net.IConnectivityManager\$Stub")
+            .getMethod("asInterface", IBinder::class.java).invoke(null, binder) ?: return "unsupported"
+        val method = service.javaClass.methods.firstOrNull {
+            it.name == "stopTethering" &&
+                it.parameterTypes.contentEquals(arrayOf(Int::class.javaPrimitiveType))
+        } ?: return "unsupported"
+        method.invoke(service, TETHERING_WIFI)
+        return "stopped"
+    }
+
+    /** Android 11+: TetheringManager.stopTethering takes the request startTethering accepted. */
+    private fun stopWithTetheringManager(): String {
+        val connector = service("tethering") ?: return "unsupported"
+        val managerType = Class.forName("android.net.TetheringManager")
+        val manager = managerType.getDeclaredConstructor(Context::class.java, Supplier::class.java)
+            .apply { isAccessible = true }
+            .newInstance(ShellContext(), Supplier<IBinder> { connector })
+        val builder = Class.forName("android.net.TetheringManager\$TetheringRequest\$Builder")
+            .getConstructor(Int::class.javaPrimitiveType).newInstance(TETHERING_WIFI)
+        val request = builder.javaClass.getMethod("build").invoke(builder)
+        val method = managerType.methods.firstOrNull {
+            it.name == "stopTethering" && it.parameterTypes.size == 1 &&
+                it.parameterTypes[0].isAssignableFrom(request.javaClass)
+        } ?: return "unsupported"
+        method.invoke(manager, request)
+        return "stopped"
+    }
+
     fun command(apk: String): String {
         val quoted = "'" + apk.replace("'", "'\"'\"'") + "'"
         return "CLASSPATH=$quoted app_process /system/bin ${CarHotspotStartMain::class.java.name}"
@@ -253,6 +296,17 @@ object CarHotspotStartMain {
 
     /** "requested" when the call returned without a result yet; "result 0" is TETHER_ERROR_NO_ERROR. */
     fun accepted(reply: String?): Boolean = reply == "requested" || reply == "result 0"
+
+    fun stopCommand(apk: String): String = "${command(apk)} $STOP_COMMAND"
+
+    /** The stop helper's reply, or null when its protocol line is missing. */
+    fun parseStop(output: String?): String? {
+        val prefix = "$STOP_HEADER|"
+        return output?.lineSequence()?.map(String::trim)?.lastOrNull { it.startsWith(prefix) }?.removePrefix(prefix)
+    }
+
+    /** The stop call returns no result code; the AP-state polling that follows is the proof. */
+    fun stopAccepted(reply: String?): Boolean = reply == "stopped"
 
     fun apConfigCommand(apk: String, credentials: HotspotCredentials): String {
         fun quoted(value: String) = "'" + value.replace("'", "'\"'\"'") + "'"

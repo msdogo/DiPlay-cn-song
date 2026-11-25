@@ -6551,6 +6551,9 @@ open class CarPlayHostActivity : ComponentActivity() {
                     state = { com.shilapi.xcertplay.network.CarHotspotStatus.isEnabled(applicationContext) },
                     shell = { command, timeout -> client.shell(command, timeout) },
                     log = ::appendLog,
+                    helper = com.shilapi.xcertplay.network.CarHotspotStartMain.command(
+                        applicationInfo.sourceDir,
+                    ),
                 )
                 if (!stopped) {
                     appendLog("Car hotspot cycle abandoned: the AP is still up")
