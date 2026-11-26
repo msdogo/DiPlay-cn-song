@@ -6551,7 +6551,7 @@ open class CarPlayHostActivity : ComponentActivity() {
                     state = { com.shilapi.xcertplay.network.CarHotspotStatus.isEnabled(applicationContext) },
                     shell = { command, timeout -> client.shell(command, timeout) },
                     log = ::appendLog,
-                    helper = com.shilapi.xcertplay.network.CarHotspotStartMain.command(
+                    helper = com.shilapi.xcertplay.network.CarHotspotStartMain.stopCommand(
                         applicationInfo.sourceDir,
                     ),
                 )

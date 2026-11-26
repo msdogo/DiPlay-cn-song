@@ -250,19 +250,78 @@ object CarHotspotStartMain {
     }
 
     /**
-     * Android 7.0–10: IConnectivityManager.stopTethering takes the same integer type startTethering does.
-     * The call returns no result code, so the caller confirms the off state by polling the AP.
+     * CN DiLink 3.0 (Android 10) exposes no stopTethering on IConnectivityManager and answers "No shell
+     * command implementation" for `cmd tethering`, but its ITetheringConnector does carry
+     * stopTethering(int, String, String, IIntResultListener). IWifiManager.stopSoftAp needs
+     * MAINLINE_NETWORK_STACK, which the shell does not hold, so it is only the last resort.
      */
     private fun stopWithConnectivity(): String {
+        stopThroughTetheringConnector()?.let { return it }
+        stopSoftAp()?.let { return it }
         val binder = service("connectivity") ?: return "unsupported"
         val service = Class.forName("android.net.IConnectivityManager\$Stub")
             .getMethod("asInterface", IBinder::class.java).invoke(null, binder) ?: return "unsupported"
-        val method = service.javaClass.methods.firstOrNull {
-            it.name == "stopTethering" &&
-                it.parameterTypes.contentEquals(arrayOf(Int::class.javaPrimitiveType))
+        val intType: Class<*> = Int::class.javaPrimitiveType ?: Int::class.javaObjectType
+        val intArg = arrayOf(intType)
+        val packageArg = arrayOf(intType, String::class.java)
+        val withPackage = service.javaClass.methods.firstOrNull {
+            it.name == "stopTethering" && it.parameterTypes.contentEquals(packageArg)
+        }
+        if (withPackage != null) {
+            withPackage.invoke(service, TETHERING_WIFI, SHELL_PACKAGE)
+            return "stopped"
+        }
+        val plain = service.javaClass.methods.firstOrNull {
+            it.name == "stopTethering" && it.parameterTypes.contentEquals(intArg)
         } ?: return "unsupported"
-        method.invoke(service, TETHERING_WIFI)
+        plain.invoke(service, TETHERING_WIFI)
         return "stopped"
+    }
+
+    /** ITetheringConnector.stopTethering(type, callerPackage, attributionTag, listener); null when absent. */
+    private fun stopThroughTetheringConnector(): String? = try {
+        val binder = service("tethering") ?: return null
+        val connector = Class.forName("android.net.ITetheringConnector\$Stub")
+            .getMethod("asInterface", IBinder::class.java).invoke(null, binder) ?: return null
+        val method = connector.javaClass.methods.firstOrNull { it.name == "stopTethering" } ?: return null
+        // IIntResultListener is a hidden class app_process cannot name; take the interface from the method.
+        val listenerType = method.parameterTypes.lastOrNull { it.isInterface } ?: return null
+        val answer = Answer()
+        val listener = Proxy.newProxyInstance(listenerType.classLoader, arrayOf(listenerType)) { proxy, m, a ->
+            when (m.name) {
+                "onResult" -> { answer.set((a?.firstOrNull() as? Int) ?: -1); null }
+                "hashCode" -> System.identityHashCode(proxy)
+                "equals" -> proxy === a?.firstOrNull()
+                "toString" -> "DiPlayStopTetheringListener"
+                else -> null
+            }
+        }
+        val args = method.parameterTypes.mapIndexed { index, type ->
+            when {
+                type == Int::class.javaPrimitiveType -> TETHERING_WIFI
+                type == String::class.java -> if (index == 1) SHELL_PACKAGE else null
+                type.isInstance(listener) -> listener
+                else -> null
+            }
+        }.toTypedArray()
+        method.invoke(connector, *args)
+        val reply = answer.await()
+        if (reply == "requested" || reply == "result 0") "stopped" else "error $reply"
+    } catch (error: Throwable) {
+        "error ${CarHotspotTethering.describe(error)}"
+    }
+
+    /** IWifiManager.stopSoftAp(); null when this firmware does not expose it. */
+    private fun stopSoftAp(): String? = try {
+        val binder = service("wifi") ?: return null
+        val wifi = Class.forName("android.net.wifi.IWifiManager\$Stub")
+            .getMethod("asInterface", IBinder::class.java).invoke(null, binder) ?: return null
+        val method = wifi.javaClass.methods.firstOrNull {
+            it.name == "stopSoftAp" && it.parameterTypes.isEmpty()
+        } ?: return null
+        if (method.invoke(wifi) as? Boolean == true) "stopped" else "error rejected"
+    } catch (error: Throwable) {
+        "error ${CarHotspotTethering.describe(error)}"
     }
 
     /** Android 11+: TetheringManager.stopTethering takes the request startTethering accepted. */

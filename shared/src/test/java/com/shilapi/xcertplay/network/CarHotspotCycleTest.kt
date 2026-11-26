@@ -3,6 +3,7 @@ package com.shilapi.xcertplay.network
 import com.shilapi.xcertplay.orchestration.WirelessHotspotMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -225,5 +226,22 @@ class CarHotspotCycleTest {
             helper = "CLASSPATH='/data/app/base.apk' app_process /system/bin Helper stop",
         )
         assertFalse(stopped)
+    }
+
+    @Test
+    fun theStartCommandCarriesTheStopSubcommand() {
+        val stop = CarHotspotStartMain.stopCommand("/data/app/base.apk")
+        assertTrue(stop, stop.endsWith(" stop"))
+        assertFalse(CarHotspotStartMain.command("/data/app/base.apk").endsWith(" stop"))
+    }
+
+    @Test
+    fun aStartReplyIsNeverMistakenForAStoppedHotspot() {
+        // The regression that shipped in 1.0.13: the start command was handed to the stop path, so the
+        // helper started tethering and printed the start header, which the stop parser must not accept.
+        val startReply = "DIPLAY_HOTSPOT_START_V1|requested"
+        assertFalse(CarHotspotStartMain.stopAccepted(CarHotspotStartMain.parseStop(startReply)))
+        assertNull(CarHotspotStartMain.parseStop(startReply))
+        assertTrue(CarHotspotStartMain.stopAccepted(CarHotspotStartMain.parseStop("DIPLAY_HOTSPOT_STOP_V1|stopped")))
     }
 }
