@@ -6544,16 +6544,13 @@ open class CarPlayHostActivity : ComponentActivity() {
                     shuttingDown.get() || generation != restartGeneration ||
                         !CarPlayBackgroundSession.isOwner(this@CarPlayHostActivity)
                 }
-                appendLog("Car hotspot cycle: stopping the AP before the reconnect")
+                appendLog("Car hotspot cycle: requesting the Wi-Fi client so the AP is given up")
                 val stopped = com.shilapi.xcertplay.network.CarHotspotCycle.stop(
                     stopDeadline,
                     cancelled,
                     state = { com.shilapi.xcertplay.network.CarHotspotStatus.isEnabled(applicationContext) },
                     shell = { command, timeout -> client.shell(command, timeout) },
                     log = ::appendLog,
-                    helper = com.shilapi.xcertplay.network.CarHotspotStartMain.stopCommand(
-                        applicationInfo.sourceDir,
-                    ),
                 )
                 if (!stopped) {
                     appendLog("Car hotspot cycle abandoned: the AP is still up")
@@ -6570,8 +6567,21 @@ open class CarPlayHostActivity : ComponentActivity() {
                     appendLog("Car hotspot cycle: restart deferred to the normal connection")
                     return@use
                 }
+                // The Wi-Fi client the stop step asked for is handed back to the AP here, so the
+                // hotspot is rebuilt on top of it instead of needing a second switch.
                 appendLog("Car hotspot cycle: starting the AP again")
-                com.shilapi.xcertplay.network.CarHotspotCycle.restart(applicationContext, restartDeadline, cancelled, ::appendLog)
+                val apBack = com.shilapi.xcertplay.network.CarHotspotCycle.restart(
+                    applicationContext,
+                    restartDeadline,
+                    cancelled,
+                    state = { com.shilapi.xcertplay.network.CarHotspotStatus.isEnabled(applicationContext) },
+                    log = ::appendLog,
+                )
+                if (!apBack) {
+                    appendLog("Car hotspot cycle: the AP did not come back; leaving the car alone")
+                    retryReconnectAfterAbandonedCycle(generation)
+                    return@use
+                }
                 if (cancelled()) return@use
                 appendLog("Car hotspot cycle done; reconnecting")
                 runOnUiThread {

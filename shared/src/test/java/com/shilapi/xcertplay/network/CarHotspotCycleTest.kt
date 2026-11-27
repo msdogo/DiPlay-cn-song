@@ -3,59 +3,39 @@ package com.shilapi.xcertplay.network
 import com.shilapi.xcertplay.orchestration.WirelessHotspotMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The hotspot cycle only ever acts on a state it could read, and only when the firmware advertises a
- * stop command. Everything else leaves the car alone.
+ * The cycle restarts the car hotspot by asking for the Wi-Fi client, which is the only Wi-Fi control
+ * the CN DiLink shell uid may use. It never acts on a state it could not read and never guesses a
+ * command the firmware does not advertise.
  */
 class CarHotspotCycleTest {
-    private val connectivityHelp = """
-        Connectivity service commands:
-          start-tethering <wifi|usb|bluetooth>
-          stop-tethering <wifi|usb|bluetooth>
-    """.trimIndent()
-
-    private val tetheringHelp = """
-        Tethering service commands:
-          start <wifi|usb|bluetooth>
-          stop <wifi|usb|bluetooth>
+    private val wifiHelp = """
+        Wi-Fi is enabled
+        ---- Commands supported ----
+          set-wifi-enabled enabled|disabled
+            Enables/disables Wifi on this device.
+          status
+            Gets the status of Wifi.
     """.trimIndent()
 
     @Test
-    fun connectivityServiceUsesStopTethering() {
-        assertEquals("cmd connectivity stop-tethering wifi", CarHotspotCycle.stopCommand("connectivity", connectivityHelp))
+    fun theFirmwareMustAdvertiseTheSubsystemSwitch() {
+        assertTrue(CarHotspotCycle.supportsWifiSwitch(wifiHelp))
+        assertFalse(CarHotspotCycle.supportsWifiSwitch(null))
+        assertFalse(CarHotspotCycle.supportsWifiSwitch("Wi-Fi is enabled"))
     }
 
     @Test
-    fun tetheringServiceUsesStop() {
-        assertEquals("cmd tethering stop wifi", CarHotspotCycle.stopCommand("tethering", tetheringHelp))
+    fun anErrorListingIsNotReadAsSupport() {
+        assertFalse(CarHotspotCycle.supportsWifiSwitch("unknown command set-wifi-enabled"))
     }
 
     @Test
-    fun aServiceWithoutTheVerbForThatNameIsNotUsed() {
-        // "stop wifi" is not a connectivity verb; only start-tethering/stop-tethering are.
-        assertTrue(CarHotspotCycle.stopCommand("connectivity", tetheringHelp) == null)
-        assertEquals("cmd tethering stop wifi", CarHotspotCycle.stopCommand("tethering", tetheringHelp))
-    }
-
-    @Test
-    fun helpThatOnlyStartsHasNoStopCommand() {
-        val startOnly = "  start-tethering wifi\n  start-tethering usb"
-        assertTrue(CarHotspotCycle.stopCommand("connectivity", startOnly) == null)
-    }
-
-    @Test
-    fun anUnknownServiceOrMissingHelpStopsNothing() {
-        assertTrue(CarHotspotCycle.stopCommand("wifi", connectivityHelp) == null)
-        assertTrue(CarHotspotCycle.stopCommand("connectivity", null) == null)
-    }
-
-    @Test
-    fun helpThatIsAnErrorListingIsNotRead() {
-        assertTrue(CarHotspotCycle.stopCommand("tethering", "Unknown command: stop") == null)
+    fun stoppingAsksForTheWifiClient() {
+        assertEquals("cmd wifi set-wifi-enabled enabled", CarHotspotCycle.wifiOnCommand())
     }
 
     @Test
@@ -97,27 +77,69 @@ class CarHotspotCycleTest {
     }
 
     @Test
-    fun stopGivesUpWhenTheFirmwareListsNoStopCommand() {
+    fun stopRefusesWhenTheFirmwareLacksTheCommand() {
         val log = mutableListOf<String>()
         val stopped = CarHotspotCycle.stop(
             deadline = System.nanoTime() + 2_000_000_000L,
             cancelled = { false },
             state = { true },
-            shell = { command, _ -> if (command.startsWith("cmd ")) "start-tethering wifi" else null },
+            shell = { command, _ -> if (command == "cmd wifi help") "Wi-Fi is enabled" else null },
             log = { log += it },
         )
         assertFalse(stopped)
-        assertTrue(log.any { it.contains("no hotspot stop command") })
+        assertTrue(log.any { it.contains("does not offer") })
+    }
+
+    @Test
+    fun stopAsksForTheClientAndWaitsForTheApToGoAway() {
+        val log = mutableListOf<String>()
+        var apOn = true
+        val stopped = CarHotspotCycle.stop(
+            deadline = System.nanoTime() + 5_000_000_000L,
+            cancelled = { false },
+            state = { apOn },
+            shell = { command, _ ->
+                when {
+                    command == "dumpsys wifi" -> null
+                    command == "cmd wifi help" -> wifiHelp
+                    command.startsWith("cmd wifi set-wifi-enabled enabled") -> { apOn = false; "" }
+                    else -> null
+                }
+            },
+            log = { log += it },
+        )
+        assertTrue(stopped)
+        assertTrue(log.any { it.contains("Wi-Fi client requested") })
+        assertTrue(log.any { it.contains("AP off state confirmed") })
+    }
+
+    @Test
+    fun stopGivesUpWhenTheFirmwareRejectsTheCommand() {
+        val log = mutableListOf<String>()
+        val stopped = CarHotspotCycle.stop(
+            deadline = System.nanoTime() + 5_000_000_000L,
+            cancelled = { false },
+            state = { true },
+            shell = { command, _ ->
+                when {
+                    command == "dumpsys wifi" -> null
+                    command == "cmd wifi help" -> wifiHelp
+                    else -> "Error: permission denied"
+                }
+            },
+            log = { log += it },
+        )
+        assertFalse(stopped)
+        assertTrue(log.any { it.contains("firmware rejected") })
     }
 
     @Test
     fun stopIsAbandonedAsSoonAsTheCycleIsCancelled() {
-        var cancelled = false
         val stopped = CarHotspotCycle.stop(
             deadline = System.nanoTime() + 2_000_000_000L,
-            cancelled = { cancelled },
+            cancelled = { true },
             state = { true },
-            shell = { _, _ -> cancelled = true; null },
+            shell = { _, _ -> null },
             log = {},
         )
         assertFalse(stopped)
@@ -145,103 +167,5 @@ class CarHotspotCycleTest {
             log = {},
         )
         assertFalse(reached)
-    }
-
-    @Test
-    fun awaitArrivalStopsAtTheDeadline() {
-        val log = mutableListOf<String>()
-        val reached = CarHotspotCycle.awaitArrival(
-            deadline = System.nanoTime(),
-            cancelled = { false },
-            arrived = { false },
-            log = { log += it },
-        )
-        assertFalse(reached)
-        assertTrue(log.any { it.contains("did not return") })
-    }
-
-    @Test
-    fun stopFallsBackToTheShellHelperWhenTheFirmwareListsNoCommand() {
-        val log = mutableListOf<String>()
-        var apOn = true
-        val stopped = CarHotspotCycle.stop(
-            deadline = System.nanoTime() + 5_000_000_000L,
-            cancelled = { false },
-            state = { apOn },
-            shell = { command, _ ->
-                when {
-                    command == "dumpsys wifi" -> null
-                    command.startsWith("cmd ") -> "start-tethering wifi"
-                    command.endsWith(" stop") -> {
-                        apOn = false
-                        "DIPLAY_HOTSPOT_STOP_V1|stopped"
-                    }
-                    else -> null
-                }
-            },
-            log = { log += it },
-            helper = "CLASSPATH='/data/app/base.apk' app_process /system/bin Helper stop",
-        )
-        assertTrue(stopped)
-        assertTrue(log.any { it.contains("shell stop request stopped") })
-        assertTrue(log.any { it.contains("AP off state confirmed") })
-    }
-
-    @Test
-    fun stopGivesUpWhenTheShellHelperRefuses() {
-        val log = mutableListOf<String>()
-        val stopped = CarHotspotCycle.stop(
-            deadline = System.nanoTime() + 5_000_000_000L,
-            cancelled = { false },
-            state = { true },
-            shell = { command, _ ->
-                when {
-                    command == "dumpsys wifi" -> null
-                    command.startsWith("cmd ") -> "start-tethering wifi"
-                    command.endsWith(" stop") -> "DIPLAY_HOTSPOT_STOP_V1|unsupported"
-                    else -> null
-                }
-            },
-            log = { log += it },
-            helper = "CLASSPATH='/data/app/base.apk' app_process /system/bin Helper stop",
-        )
-        assertFalse(stopped)
-        assertTrue(log.any { it.contains("shell stop request failed") })
-    }
-
-    @Test
-    fun aMissingHelperReplyIsNotMistakenForSuccess() {
-        val stopped = CarHotspotCycle.stop(
-            deadline = System.nanoTime() + 5_000_000_000L,
-            cancelled = { false },
-            state = { true },
-            shell = { command, _ ->
-                when {
-                    command == "dumpsys wifi" -> null
-                    command.startsWith("cmd ") -> "start-tethering wifi"
-                    else -> "no protocol line here"
-                }
-            },
-            log = {},
-            helper = "CLASSPATH='/data/app/base.apk' app_process /system/bin Helper stop",
-        )
-        assertFalse(stopped)
-    }
-
-    @Test
-    fun theStartCommandCarriesTheStopSubcommand() {
-        val stop = CarHotspotStartMain.stopCommand("/data/app/base.apk")
-        assertTrue(stop, stop.endsWith(" stop"))
-        assertFalse(CarHotspotStartMain.command("/data/app/base.apk").endsWith(" stop"))
-    }
-
-    @Test
-    fun aStartReplyIsNeverMistakenForAStoppedHotspot() {
-        // The regression that shipped in 1.0.13: the start command was handed to the stop path, so the
-        // helper started tethering and printed the start header, which the stop parser must not accept.
-        val startReply = "DIPLAY_HOTSPOT_START_V1|requested"
-        assertFalse(CarHotspotStartMain.stopAccepted(CarHotspotStartMain.parseStop(startReply)))
-        assertNull(CarHotspotStartMain.parseStop(startReply))
-        assertTrue(CarHotspotStartMain.stopAccepted(CarHotspotStartMain.parseStop("DIPLAY_HOTSPOT_STOP_V1|stopped")))
     }
 }
